@@ -6,7 +6,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String DB_NAME = "clones.db";
-    public static final int DB_VERSION = 3;
+    public static final int DB_VERSION = 4;
     public static final String T_CLONES = "clones";
     public static final String T_NET = "network_profiles";
     public static final String T_LOGS = "clone_logs";
@@ -44,7 +44,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             + "created_at INTEGER NOT NULL,"
             + "status TEXT NOT NULL,"
             + "note TEXT NOT NULL DEFAULT '',"
-            + "clone_package TEXT NOT NULL DEFAULT '')");
+            + "clone_package TEXT NOT NULL DEFAULT '',"
+            + "virtual_user INTEGER NOT NULL DEFAULT -1)");
         createV2Tables(db);
     }
 
@@ -82,6 +83,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
         if (oldVersion < 3) {
             db.execSQL("ALTER TABLE " + T_CLONES + " ADD COLUMN clone_package TEXT NOT NULL DEFAULT ''");
+        }
+        if (oldVersion < 4) {
+            db.execSQL("ALTER TABLE " + T_CLONES + " ADD COLUMN virtual_user INTEGER NOT NULL DEFAULT -1");
         }
     }
 }

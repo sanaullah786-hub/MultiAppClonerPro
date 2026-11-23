@@ -13,6 +13,7 @@ public class CloneRepository {
     public static final long DUPLICATE = -2;
     public static final String METHOD_NONE = "unassigned";
     public static final String METHOD_REAL = "real_apk";
+    public static final String METHOD_VIRTUAL = "virtual";
     public static final String STATUS_RECORD_ONLY = "profile_only";
     public static final String STATUS_INSTALLING = "installing";
     public static final String STATUS_ACTIVE = "active";
@@ -45,6 +46,7 @@ public class CloneRepository {
             v.put("status", p.status);
             v.put("note", p.note == null ? "" : p.note);
             v.put("clone_package", p.clonePackage == null ? "" : p.clonePackage);
+            v.put("virtual_user", p.virtualUser);
             return helper.getWritableDatabase().insert(DatabaseHelper.T_CLONES, null, v);
         } catch (Exception e) {
             return ERROR;
@@ -75,6 +77,8 @@ public class CloneRepository {
         p.note = c.getString(c.getColumnIndex("note"));
         int cp = c.getColumnIndex("clone_package");
         p.clonePackage = cp >= 0 && !c.isNull(cp) ? c.getString(cp) : "";
+        int vu = c.getColumnIndex("virtual_user");
+        p.virtualUser = vu >= 0 && !c.isNull(vu) ? c.getInt(vu) : -1;
         return p;
     }
 
@@ -145,6 +149,31 @@ public class CloneRepository {
         try {
             ContentValues v = new ContentValues();
             v.put("network_profile_id", networkId);
+            return helper.getWritableDatabase().update(DatabaseHelper.T_CLONES, v, "id=?", new String[]{String.valueOf(cloneId)}) == 1;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /** Next unused virtual user id: every virtual clone gets its own separate data area. */
+    public int nextVirtualUser() {
+        try {
+            Cursor c = helper.getReadableDatabase().rawQuery("SELECT MAX(virtual_user) FROM " + DatabaseHelper.T_CLONES, null);
+            try {
+                int max = c.moveToFirst() && !c.isNull(0) ? c.getInt(0) : -1;
+                return max + 1;
+            } finally {
+                c.close();
+            }
+        } catch (Exception e) {
+            return (int) (System.currentTimeMillis() % 100000);
+        }
+    }
+
+    public boolean setVirtualUser(long cloneId, int user) {
+        try {
+            ContentValues v = new ContentValues();
+            v.put("virtual_user", user);
             return helper.getWritableDatabase().update(DatabaseHelper.T_CLONES, v, "id=?", new String[]{String.valueOf(cloneId)}) == 1;
         } catch (Exception e) {
             return false;

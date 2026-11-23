@@ -178,6 +178,7 @@ public class CloneManagerActivity extends Activity {
             .setNegativeButton("Cancel", null)
             .setPositiveButton("Delete", new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface d, int w) {
+                    CloneState.cleanup(p);
                     if (repo.delete(p.id)) reload();
                     else Toast.makeText(CloneManagerActivity.this, "Delete failed. Nothing was changed.", Toast.LENGTH_LONG).show();
                 }
@@ -200,7 +201,7 @@ public class CloneManagerActivity extends Activity {
             }
             ((ImageView) v.findViewById(R.id.cloneIcon)).setImageDrawable(ic);
             ((TextView) v.findViewById(R.id.cloneName)).setText(p.cloneName);
-            ((TextView) v.findViewById(R.id.cloneLine2)).setText(p.appName + "  •  Method: " + (CloneRepository.METHOD_REAL.equals(p.method) ? "APK repackaging" : "not assigned"));
+            ((TextView) v.findViewById(R.id.cloneLine2)).setText(p.appName + "  •  Method: " + (CloneRepository.METHOD_VIRTUAL.equals(p.method) ? "virtual" : CloneRepository.METHOD_REAL.equals(p.method) ? "installed clone" : "not assigned"));
             String net = "Default";
             if (p.networkProfileId > 0) {
                 NetworkProfile np = netRepo.get(p.networkProfileId);

@@ -32,6 +32,14 @@ public class AppDetailsActivity extends Screen {
         });
     }
 
+    private void startCreate(String method) {
+        Intent i = new Intent(this, CreateCloneActivity.class);
+        i.putExtra(CreateCloneActivity.EXTRA_PKG, pkg);
+        i.putExtra(CreateCloneActivity.EXTRA_LABEL, label == null ? pkg : label);
+        i.putExtra(CreateCloneActivity.EXTRA_METHOD, method);
+        startActivity(i);
+    }
+
     @Override
     protected void build(LinearLayout body) {
         LinearLayout head = Ui.card(this);
@@ -93,7 +101,8 @@ public class AppDetailsActivity extends Screen {
         Ui.add(body, real);
 
         LinearLayout virt = Ui.card(this);
-        virt.addView(Ui.badge(this, "VIRTUAL CLONING: NOT INCLUDED", Ui.ORANGE));
+        virt.addView(Ui.badge(this, analysis.virtualAvailable ? "VIRTUAL CLONE (PARALLEL SPACE STYLE): AVAILABLE" : "VIRTUAL CLONE: UNSUPPORTED",
+            analysis.virtualAvailable ? Ui.GREEN : Ui.RED));
         TextView vt = Ui.text(this, analysis.virtualReason, 12, Ui.TEXT2, false);
         vt.setPadding(0, Ui.dp(this, 8), 0, 0);
         virt.addView(vt);
@@ -119,14 +128,14 @@ public class AppDetailsActivity extends Screen {
         }));
         if (integrity != null) Ui.add(body, Ui.text(this, integrity, 12, Ui.TEXT2, false));
 
+        if (analysis.virtualAvailable) {
+            Ui.add(body, Ui.button(this, "Create virtual clone (recommended)", true, new View.OnClickListener() {
+                public void onClick(View v) { startCreate(CloneRepository.METHOD_VIRTUAL); }
+            }));
+        }
         if (analysis.realAvailable) {
-            Ui.add(body, Ui.button(this, "Create clone", true, new View.OnClickListener() {
-                public void onClick(View v) {
-                    Intent i = new Intent(AppDetailsActivity.this, CreateCloneActivity.class);
-                    i.putExtra(CreateCloneActivity.EXTRA_PKG, pkg);
-                    i.putExtra(CreateCloneActivity.EXTRA_LABEL, label == null ? pkg : label);
-                    startActivity(i);
-                }
+            Ui.add(body, Ui.button(this, "Create installed clone (repackaged app)", false, new View.OnClickListener() {
+                public void onClick(View v) { startCreate(CloneRepository.METHOD_REAL); }
             }));
         }
     }

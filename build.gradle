@@ -1,3 +1,13 @@
 plugins {
-    id 'com.android.application' version '8.7.3' apply false
+    id 'com.android.application' version '8.13.2' apply false
+    id 'com.android.library' version '8.13.2' apply false
+}
+
+ext {
+    compileSdkVersion = 35
+    // The virtual engine (Bcore) needs targetSdk 28 for the host app.
+    targetSdkVersion = 28
+    minSdk = 24
+    xVersion = '1.1.0'
+    hiddenApiBypass = '4.3'
 }

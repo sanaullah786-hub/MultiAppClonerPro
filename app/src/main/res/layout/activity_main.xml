@@ -66,7 +66,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
                 android:layout_marginTop="12dp"
-                android:text="Cloning engines are not available in this build: profiles are records only. See Settings > Diagnostics."
+                android:text="Pick an app, create a virtual clone (own data, runs inside this app) or an installed clone. See Settings > Diagnostics."
                 android:textColor="@color/orange"
                 android:textSize="11sp" />
         </LinearLayout>

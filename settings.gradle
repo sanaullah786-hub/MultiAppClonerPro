@@ -10,7 +10,11 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven { url "https://www.jitpack.io" }
     }
 }
 rootProject.name = "MultiAppClonerPro"
 include ':app'
+include ':black-reflection'
+include ':compiler'
+include ':Bcore'

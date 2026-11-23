@@ -55,7 +55,11 @@ public class CloneDetailsActivity extends Screen {
 
         LinearLayout st = Ui.card(this);
         final boolean active = CloneRepository.STATUS_ACTIVE.equals(p.status);
-        if (active) {
+        final boolean virt = CloneRepository.METHOD_VIRTUAL.equals(p.method);
+        if (active && virt) {
+            st.addView(Ui.badge(this, "VIRTUAL CLONE", Ui.GREEN));
+            st.addView(Ui.text(this, "Runs inside this app with its own private data (virtual user " + p.virtualUser + "). It is not installed in Android.", 12, Ui.TEXT2, false));
+        } else if (active) {
             st.addView(Ui.badge(this, "INSTALLED CLONE", Ui.GREEN));
             st.addView(Ui.text(this, "This clone is a separate app on your device (" + p.clonePackage + ") with its own data. It also appears in your launcher.", 12, Ui.TEXT2, false));
         } else if (CloneRepository.STATUS_INSTALLING.equals(p.status)) {
@@ -80,7 +84,38 @@ public class CloneDetailsActivity extends Screen {
                         Toast.makeText(CloneDetailsActivity.this, "Could not open the clone.", Toast.LENGTH_LONG).show();
                 }
             }));
-            Ui.add(body, Ui.button(this, "Uninstall clone app", false, new View.OnClickListener() {
+            if (virt) {
+                Ui.add(body, Ui.button(this, "Stop clone", false, new View.OnClickListener() {
+                    public void onClick(View v) {
+                        VirtualEngine.stop(p.packageName, p.virtualUser);
+                        Toast.makeText(CloneDetailsActivity.this, "Clone stopped.", Toast.LENGTH_SHORT).show();
+                    }
+                }));
+                Ui.add(body, Ui.button(this, "Clear clone data", false, new View.OnClickListener() {
+                    public void onClick(View v) {
+                        confirm("Clear data?", "Everything this clone saved (logins, files, databases) is erased. The original app is not touched.", "Clear", new Runnable() {
+                            public void run() {
+                                boolean ok = VirtualEngine.clearData(p.packageName, p.virtualUser);
+                                logs.add(p.id, ok ? "Clone data cleared" : "Clearing clone data failed");
+                                Toast.makeText(CloneDetailsActivity.this, ok ? "Data cleared." : "Could not clear data.", Toast.LENGTH_LONG).show();
+                                rebuild();
+                            }
+                        });
+                    }
+                }));
+                Ui.add(body, Ui.button(this, "Remove virtual clone", false, new View.OnClickListener() {
+                    public void onClick(View v) {
+                        confirm("Remove clone?", "The virtual clone and all its data are deleted. The original app is not touched.", "Remove", new Runnable() {
+                            public void run() {
+                                VirtualEngine.remove(p.packageName, p.virtualUser);
+                                repo.setState(p.id, CloneRepository.STATUS_REMOVED, null, null);
+                                logs.add(p.id, "Virtual clone removed");
+                                rebuild();
+                            }
+                        });
+                    }
+                }));
+            } else Ui.add(body, Ui.button(this, "Uninstall clone app", false, new View.OnClickListener() {
                 public void onClick(View v) {
                     confirm("Uninstall clone?", "Android will ask you to confirm. The clone's data is deleted with it. The original app is not touched.", "Continue", new Runnable() {
                         public void run() { startActivity(CloneInstaller.uninstallIntent(p.clonePackage)); }
@@ -101,7 +136,7 @@ public class CloneDetailsActivity extends Screen {
         LinearLayout info = Ui.card(this);
         info.addView(Ui.row(this, "Clone ID", String.valueOf(p.id)));
         info.addView(Ui.row(this, "Package", p.packageName));
-        info.addView(Ui.row(this, "Method", CloneRepository.METHOD_REAL.equals(p.method) ? "APK repackaging" : "Not assigned"));
+        info.addView(Ui.row(this, "Method", virt ? "Virtual (own data area)" : CloneRepository.METHOD_REAL.equals(p.method) ? "APK repackaging" : "Not assigned"));
         if (p.clonePackage != null && p.clonePackage.length() > 0) info.addView(Ui.row(this, "Clone package", p.clonePackage));
         info.addView(Ui.row(this, "Network", netName));
         info.addView(Ui.row(this, "Created", new SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault()).format(new Date(p.createdAt))));
@@ -144,6 +179,7 @@ public class CloneDetailsActivity extends Screen {
                 confirm("Delete profile?", "\"" + p.cloneName + "\" and its log will be removed from this app. The original app and other clones are not touched.",
                     "Delete", new Runnable() {
                         public void run() {
+                            CloneState.cleanup(p);
                             if (repo.delete(p.id)) finish();
                             else Toast.makeText(CloneDetailsActivity.this, "Delete failed. Nothing was changed.", Toast.LENGTH_LONG).show();
                         }
@@ -153,6 +189,24 @@ public class CloneDetailsActivity extends Screen {
     }
 
     private void reinstall(final CloneProfile p) {
+        if (CloneRepository.METHOD_VIRTUAL.equals(p.method)) {
+            final android.content.Context app = getApplicationContext();
+            Toast.makeText(this, "Creating the virtual clone...", Toast.LENGTH_SHORT).show();
+            exec.execute(new Runnable() {
+                public void run() {
+                    final ApkCloningEngine.Result res = VirtualEngine.install(app, p.packageName, p.virtualUser);
+                    repo.setState(p.id, res.success ? CloneRepository.STATUS_ACTIVE : CloneRepository.STATUS_FAILED, CloneRepository.METHOD_VIRTUAL, p.packageName);
+                    logs.add(p.id, res.success ? "Virtual clone created (virtual user " + p.virtualUser + ")" : res.message);
+                    ui(new Runnable() {
+                        public void run() {
+                            if (!res.success) Toast.makeText(CloneDetailsActivity.this, res.message, Toast.LENGTH_LONG).show();
+                            rebuild();
+                        }
+                    });
+                }
+            });
+            return;
+        }
         if (!CloneInstaller.canInstall(this)) {
             confirm("Allow installs", "Android needs your permission before this app can install the clone. Switch on \"Allow from this source\", then come back and try again.",
                 "Open settings", new Runnable() {

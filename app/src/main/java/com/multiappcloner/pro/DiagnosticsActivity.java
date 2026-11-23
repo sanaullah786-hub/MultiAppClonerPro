@@ -37,7 +37,7 @@ public class DiagnosticsActivity extends Screen {
         c.addView(Ui.row(this, "Internet", NetUtil.isOnline(this) ? NetUtil.connectionType(this) : "Not connected"));
         c.addView(Ui.row(this, "VPN interface", NetUtil.isVpnActive() ? "Detected" : "Not detected"));
         c.addView(Ui.row(this, "Real APK cloning", CloneInstaller.canInstall(this) ? "Available" : "Needs \"Install unknown apps\" permission"));
-        c.addView(Ui.row(this, "Virtual cloning", VirtualizationEngine.isAvailable() ? "Available" : "Unavailable"));
+        c.addView(Ui.row(this, "Virtual cloning", VirtualEngine.isAvailable() ? "Embedded engine loaded" : "Unavailable"));
         c.addView(Ui.row(this, "VPN tunnel", "Not implemented (reference profiles only)"));
         Ui.add(body, c);
         if (visibleApps == 0) {

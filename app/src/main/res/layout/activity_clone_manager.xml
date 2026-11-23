@@ -38,7 +38,7 @@
             <TextView android:id="@+id/emptyTitle" android:layout_width="wrap_content" android:layout_height="wrap_content"
                 android:layout_marginTop="8dp" android:text="No clone profiles yet" android:textColor="@color/text" android:textSize="17sp" android:textStyle="bold" />
             <TextView android:id="@+id/emptyText" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:layout_marginTop="6dp" android:gravity="center" android:text="Select an installed app to save a clone profile record."
+                android:layout_marginTop="6dp" android:gravity="center" android:text="Select an installed app to create a clone."
                 android:textColor="@color/text2" android:textSize="13sp" />
             <Button android:id="@+id/btnEmptyAdd" android:layout_width="wrap_content" android:layout_height="46dp"
                 android:layout_marginTop="16dp" android:background="@drawable/bg_btn_primary" android:paddingLeft="24dp" android:paddingRight="24dp"

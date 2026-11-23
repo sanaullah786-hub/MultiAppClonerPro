@@ -18,6 +18,8 @@ import android.widget.Toast;
 public class CreateCloneActivity extends Activity {
     public static final String EXTRA_PKG = "pkg";
     public static final String EXTRA_LABEL = "label";
+    public static final String EXTRA_METHOD = "method";
+    private boolean virtual = true;
 
     private CloneRepository repo;
     private EditText name;
@@ -31,6 +33,7 @@ public class CreateCloneActivity extends Activity {
         setContentView(R.layout.activity_create_clone);
         repo = new CloneRepository(this);
 
+        virtual = !CloneRepository.METHOD_REAL.equals(getIntent().getStringExtra(EXTRA_METHOD));
         pkg = getIntent().getStringExtra(EXTRA_PKG);
         label = getIntent().getStringExtra(EXTRA_LABEL);
         if (pkg == null || label == null) {
@@ -50,6 +53,10 @@ public class CreateCloneActivity extends Activity {
             return;
         }
 
+        ((TextView) findViewById(R.id.methodBadge)).setText(virtual ? "VIRTUAL CLONE" : "INSTALLED CLONE");
+        ((TextView) findViewById(R.id.methodText)).setText(virtual
+            ? "The app runs inside Multi App Cloner Pro, like Parallel Space. This clone gets its own private data area, separate from the original app and from other clones. Nothing is installed into Android."
+            : "A modified copy of the app is installed as a separate Android app under a new package name. You confirm the install on the system dialog.");
         name = (EditText) findViewById(R.id.cloneName);
         counter = (TextView) findViewById(R.id.counter);
         error = (TextView) findViewById(R.id.error);
@@ -86,7 +93,7 @@ public class CreateCloneActivity extends Activity {
         final String n = name.getText().toString().trim();
         String err = CloneRepository.validateName(n);
         if (err != null) { showError(err); return; }
-        if (!CloneInstaller.canInstall(this)) {
+        if (!virtual && !CloneInstaller.canInstall(this)) {
             new AlertDialog.Builder(this).setTitle("Allow installs")
                 .setMessage("Android needs your permission before this app can install the clone. On the next screen switch on \"Allow from this source\", then come back and tap Create again.")
                 .setNegativeButton("Cancel", null)
@@ -100,8 +107,9 @@ public class CreateCloneActivity extends Activity {
         p.appName = label;
         p.packageName = pkg;
         p.cloneName = n;
-        p.method = CloneRepository.METHOD_REAL;
+        p.method = virtual ? CloneRepository.METHOD_VIRTUAL : CloneRepository.METHOD_REAL;
         p.status = CloneRepository.STATUS_INSTALLING;
+        if (virtual) p.virtualUser = repo.nextVirtualUser();
         p.createdAt = System.currentTimeMillis();
         long dn = AppPrefs.defaultNetwork(this);
         if (dn > 0 && new NetworkRepository(this).get(dn) != null) p.networkProfileId = dn;
@@ -114,16 +122,19 @@ public class CreateCloneActivity extends Activity {
             showError("Could not save the clone profile (storage error). Nothing was created.");
             return;
         }
-        final String clonePkg = ApkCloningEngine.clonePackageFor(pkg, id);
-        repo.setState(id, CloneRepository.STATUS_INSTALLING, CloneRepository.METHOD_REAL, clonePkg);
+        final String clonePkg = virtual ? pkg : ApkCloningEngine.clonePackageFor(pkg, id);
+        final int vuser = p.virtualUser;
+        repo.setState(id, CloneRepository.STATUS_INSTALLING, p.method, clonePkg);
         final android.content.Context app = getApplicationContext();
         final View btn = findViewById(R.id.btnSave);
         btn.setEnabled(false);
-        error.setText("Building and signing the clone. This can take a few seconds for large apps...");
+        error.setText(virtual ? "Creating the virtual clone. This can take a few seconds for large apps..."
+            : "Building and signing the clone. This can take a few seconds for large apps...");
         error.setVisibility(View.VISIBLE);
         new Thread(new Runnable() {
             public void run() {
-                final ApkCloningEngine.Result res = ApkCloningEngine.cloneReal(app, id, pkg, n);
+                final ApkCloningEngine.Result res = virtual ? VirtualEngine.install(app, pkg, vuser)
+                    : ApkCloningEngine.cloneReal(app, id, pkg, n);
                 runOnUiThread(new Runnable() {
                     public void run() {
                         if (!res.success) {
@@ -134,8 +145,14 @@ public class CreateCloneActivity extends Activity {
                             }
                             return;
                         }
-                        new LogRepository(app).add(id, "Clone APK built and signed, sent to the system installer as " + clonePkg);
-                        Toast.makeText(app, "Confirm the install on the system dialog.", Toast.LENGTH_LONG).show();
+                        if (virtual) {
+                            new CloneRepository(app).setState(id, CloneRepository.STATUS_ACTIVE, CloneRepository.METHOD_VIRTUAL, clonePkg);
+                            new LogRepository(app).add(id, "Virtual clone created (virtual user " + vuser + ")");
+                            Toast.makeText(app, "Virtual clone ready.", Toast.LENGTH_LONG).show();
+                        } else {
+                            new LogRepository(app).add(id, "Clone APK built and signed, sent to the system installer as " + clonePkg);
+                            Toast.makeText(app, "Confirm the install on the system dialog.", Toast.LENGTH_LONG).show();
+                        }
                         if (!isFinishing()) {
                             Intent i = new Intent(CreateCloneActivity.this, CloneDetailsActivity.class);
                             i.putExtra(CloneDetailsActivity.EXTRA_ID, id);

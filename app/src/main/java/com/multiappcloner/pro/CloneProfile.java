@@ -12,4 +12,6 @@ public class CloneProfile {
     public String status;
     public String note = "";
     public String clonePackage = "";
+    /** Virtual user id (separate data area) for virtual clones, -1 otherwise. */
+    public int virtualUser = -1;
 }

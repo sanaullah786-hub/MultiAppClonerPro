@@ -4,28 +4,34 @@ plugins {
 
 android {
     namespace 'com.multiappcloner.pro'
-    compileSdk 34
+    compileSdk rootProject.ext.compileSdkVersion
+    ndkVersion = "29.0.13846066"
 
     defaultConfig {
         applicationId "com.multiappcloner.pro"
-        minSdk 24          // PackageInstaller + Keystore signing + APK v2-only signatures need Android 7.0+
-        targetSdk 34
-        versionCode 4
-        versionName "2.0.0"
+        minSdk rootProject.ext.minSdk
+        targetSdk rootProject.ext.targetSdkVersion
+        versionCode 5
+        versionName "3.0.0"
+        ndk { abiFilters 'arm64-v8a', 'armeabi-v7a' }
     }
 
     buildTypes {
-        release {
-            minifyEnabled false
-        }
+        release { minifyEnabled false }
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
     }
 
-    lint {
-        abortOnError false
+    packaging {
+        jniLibs { useLegacyPackaging true }
     }
+
+    lint { abortOnError false }
+}
+
+dependencies {
+    implementation project(':Bcore')
 }

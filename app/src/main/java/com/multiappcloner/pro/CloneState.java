@@ -21,6 +21,7 @@ public final class CloneState {
     /** Reconciles the stored status with the package manager (e.g. the user uninstalled the clone in Settings). */
     public static CloneProfile sync(Context c, CloneRepository repo, CloneProfile p) {
         if (p == null) return null;
+        if (CloneRepository.METHOD_VIRTUAL.equals(p.method)) return p; // virtual clones live inside this app; the DB is the source of truth
         boolean installed = isInstalled(c, p.clonePackage);
         if (CloneRepository.STATUS_ACTIVE.equals(p.status) && !installed) {
             repo.setState(p.id, CloneRepository.STATUS_REMOVED, null, null);
@@ -35,14 +36,21 @@ public final class CloneState {
     }
 
     public static String label(CloneProfile p) {
-        if (CloneRepository.STATUS_ACTIVE.equals(p.status)) return "Installed clone: tap to open or manage";
+        if (CloneRepository.STATUS_ACTIVE.equals(p.status))
+            return CloneRepository.METHOD_VIRTUAL.equals(p.method) ? "Virtual clone: tap to open or manage" : "Installed clone: tap to open or manage";
         if (CloneRepository.STATUS_INSTALLING.equals(p.status)) return "Waiting for the install to finish";
         if (CloneRepository.STATUS_FAILED.equals(p.status)) return "Install failed: open details";
         if (CloneRepository.STATUS_REMOVED.equals(p.status)) return "Clone app was removed: you can reinstall it";
         return "Profile record only (no clone installed)";
     }
 
+    /** Deletes a virtual clone's data area when its profile is deleted. Installed clones are left for the user to uninstall. */
+    public static void cleanup(CloneProfile p) {
+        if (p != null && CloneRepository.METHOD_VIRTUAL.equals(p.method) && p.virtualUser >= 0) VirtualEngine.remove(p.packageName, p.virtualUser);
+    }
+
     public static boolean launch(Context c, CloneProfile p) {
+        if (CloneRepository.METHOD_VIRTUAL.equals(p.method)) return VirtualEngine.launch(p.packageName, p.virtualUser);
         try {
             Intent i = c.getPackageManager().getLaunchIntentForPackage(p.clonePackage);
             if (i == null) return false;

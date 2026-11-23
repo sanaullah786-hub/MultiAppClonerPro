@@ -28,8 +28,11 @@ public class HybridCloneManager {
         } else {
             a.realReasons.add(a.report.error);
         }
-        a.virtualAvailable = VirtualizationEngine.isAvailable();
-        a.virtualReason = VirtualizationEngine.unavailableReason();
+        a.virtualAvailable = a.report.error == null && !a.report.system && !pkg.equals(c.getPackageName()) && VirtualEngine.isAvailable();
+        a.virtualReason = a.report.error != null ? a.report.error
+            : a.report.system ? "System apps cannot be cloned."
+            : "Runs inside this app with separate data for every clone, like Parallel Space. Apps that use Google sign-in, Play Integrity or strict "
+              + "anti-tamper checks may not work inside a virtual space.";
         if (a.realAvailable) a.methods.add("real_apk");
         if (a.virtualAvailable) a.methods.add("virtual");
         store(c, pkg, a);
@@ -56,7 +59,7 @@ public class HybridCloneManager {
     /** Runs the chosen workflow. Never reports success unless a method really ran. */
     public static ApkCloningEngine.Result execute(Context c, long cloneId, String pkg, String cloneName, String method) {
         if ("real_apk".equals(method)) return ApkCloningEngine.cloneReal(c, cloneId, pkg, cloneName);
-        if ("virtual".equals(method)) return VirtualizationEngine.launch(pkg);
+        if ("virtual".equals(method)) return VirtualEngine.install(c, pkg, (int) cloneId);
         return new ApkCloningEngine.Result(false, "No supported cloning method was selected.");
     }
 }

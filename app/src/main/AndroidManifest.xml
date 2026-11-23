@@ -11,6 +11,9 @@
         tools:ignore="QueryAllPackagesPermission" />
 
     <application
+        android:name=".CloneApp"
+        android:largeHeap="true"
+        android:requestLegacyExternalStorage="true"
         android:allowBackup="false"
         android:icon="@drawable/ic_launcher"
         android:label="Multi App Cloner Pro"
