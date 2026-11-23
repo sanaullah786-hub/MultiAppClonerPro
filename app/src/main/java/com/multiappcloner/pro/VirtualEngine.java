@@ -42,6 +42,21 @@ public final class VirtualEngine {
         }
     }
 
+    /** Installs an APK file (not necessarily installed in Android) into the virtual space. Blocking. */
+    public static ApkCloningEngine.Result installApk(Context c, java.io.File apk, int userId) {
+        try {
+            BlackBoxCore core = BlackBoxCore.get();
+            try { core.createUser(userId); } catch (Throwable t) { Log.w(TAG, "createUser: " + t); }
+            InstallResult r = core.installPackageAsUser(apk, userId);
+            if (r != null && r.success) return new ApkCloningEngine.Result(true, "Installed in the virtual space.");
+            return new ApkCloningEngine.Result(false, "Virtual install failed: " + (r == null ? "no result" : r.msg));
+        } catch (Throwable t) {
+            Log.e(TAG, "installApk", t);
+            return new ApkCloningEngine.Result(false, "Virtual install failed: " + t.getClass().getSimpleName()
+                + (t.getMessage() == null ? "" : ": " + t.getMessage()));
+        }
+    }
+
     public static boolean launch(String pkg, int userId) {
         try {
             return BlackBoxCore.get().launchApk(pkg, userId);

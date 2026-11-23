@@ -53,6 +53,9 @@ public class MainActivity extends Activity {
         addSmall(r3, "📍  IP Checker", 0, new View.OnClickListener() {
             public void onClick(View v) { Screens.ipChecker(MainActivity.this); }
         });
+        addSmall(r3, "📥  Install APK", 10, new View.OnClickListener() {
+            public void onClick(View v) { startActivity(new android.content.Intent(MainActivity.this, ImportApkActivity.class)); }
+        });
         addSmall(r3, "⚙  Settings", 10, new View.OnClickListener() {
             public void onClick(View v) { Screens.settings(MainActivity.this); }
         });
