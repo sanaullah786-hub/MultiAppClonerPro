@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg"
+    android:orientation="vertical">
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="56dp"
+        android:gravity="center_vertical" android:orientation="horizontal" android:paddingLeft="16dp" android:paddingRight="8dp">
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:text="Clone Manager" android:textColor="@color/text" android:textSize="22sp" android:textStyle="bold" />
+        <TextView android:id="@+id/btnAdd" android:layout_width="48dp" android:layout_height="48dp"
+            android:gravity="center" android:text="＋" android:textColor="@color/cyan" android:textSize="26sp" />
+    </LinearLayout>
+
+    <EditText android:id="@+id/search" android:layout_width="match_parent" android:layout_height="46dp"
+        android:layout_marginLeft="16dp" android:layout_marginRight="16dp" android:background="@drawable/bg_card"
+        android:hint="Search clones" android:paddingLeft="14dp" android:paddingRight="14dp"
+        android:singleLine="true" android:textColor="@color/text" android:textColorHint="@color/text2" android:textSize="14sp" />
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="40dp"
+        android:gravity="center_vertical" android:orientation="horizontal" android:paddingLeft="16dp" android:paddingRight="16dp">
+        <TextView android:id="@+id/count" android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:textColor="@color/text2" android:textSize="12sp" />
+        <TextView android:id="@+id/btnSort" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:padding="6dp" android:textColor="@color/cyan" android:textSize="13sp" />
+    </LinearLayout>
+
+    <FrameLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1">
+        <ListView android:id="@+id/list" android:layout_width="match_parent" android:layout_height="match_parent"
+            android:cacheColorHint="@android:color/transparent" android:clipToPadding="false"
+            android:divider="@android:color/transparent" android:dividerHeight="8dp"
+            android:paddingBottom="16dp" android:paddingLeft="16dp" android:paddingRight="16dp" />
+        <LinearLayout android:id="@+id/emptyBox" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_gravity="center" android:gravity="center_horizontal" android:orientation="vertical"
+            android:padding="32dp" android:visibility="gone">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🗂" android:textSize="48sp" />
+            <TextView android:id="@+id/emptyTitle" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginTop="8dp" android:text="No clone profiles yet" android:textColor="@color/text" android:textSize="17sp" android:textStyle="bold" />
+            <TextView android:id="@+id/emptyText" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="6dp" android:gravity="center" android:text="Select an installed app to save a clone profile record."
+                android:textColor="@color/text2" android:textSize="13sp" />
+            <Button android:id="@+id/btnEmptyAdd" android:layout_width="wrap_content" android:layout_height="46dp"
+                android:layout_marginTop="16dp" android:background="@drawable/bg_btn_primary" android:paddingLeft="24dp" android:paddingRight="24dp"
+                android:text="Select an app" android:textAllCaps="false" android:textColor="@color/text" android:textSize="14sp" />
+        </LinearLayout>
+    </FrameLayout>
+
+    <include layout="@layout/include_bottom_nav" />
+</LinearLayout>

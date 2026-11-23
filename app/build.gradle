@@ -1,0 +1,31 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.multiappcloner.pro'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.multiappcloner.pro"
+        minSdk 24          // PackageInstaller + Keystore signing + APK v2-only signatures need Android 7.0+
+        targetSdk 34
+        versionCode 4
+        versionName "2.0.0"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    lint {
+        abortOnError false
+    }
+}

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Install the cloned (repackaged) APK through the system installer; the user confirms each install. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- Needed on Android 11+ to list and inspect all installed apps (this app is distributed outside Google Play). -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
+        tools:ignore="QueryAllPackagesPermission" />
+
+    <application
+        android:allowBackup="false"
+        android:icon="@drawable/ic_launcher"
+        android:label="Multi App Cloner Pro"
+        android:theme="@style/AppTheme">
+
+        <activity android:name=".SplashActivity" android:exported="true" android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".OnboardingActivity" android:screenOrientation="portrait" />
+        <activity android:name=".MainActivity" android:screenOrientation="portrait" />
+        <activity android:name=".InstalledAppsActivity" android:screenOrientation="portrait" android:windowSoftInputMode="adjustPan" />
+        <activity android:name=".AppDetailsActivity" android:screenOrientation="portrait" />
+        <activity android:name=".CreateCloneActivity" android:screenOrientation="portrait" android:windowSoftInputMode="adjustResize" />
+        <activity android:name=".CloneManagerActivity" android:screenOrientation="portrait" android:windowSoftInputMode="adjustPan" />
+        <activity android:name=".CloneDetailsActivity" android:screenOrientation="portrait" android:windowSoftInputMode="adjustResize" />
+        <activity android:name=".NetworkManagerActivity" android:screenOrientation="portrait" />
+        <activity android:name=".ProxySettingsActivity" android:screenOrientation="portrait" android:windowSoftInputMode="adjustResize" />
+        <activity android:name=".VpnProfileActivity" android:screenOrientation="portrait" android:windowSoftInputMode="adjustResize" />
+        <activity android:name=".ProvidersActivity" android:screenOrientation="portrait" />
+        <activity android:name=".IpCheckerActivity" android:screenOrientation="portrait" />
+        <activity android:name=".SettingsActivity" android:screenOrientation="portrait" />
+        <activity android:name=".DataManagementActivity" android:screenOrientation="portrait" />
+        <activity android:name=".BackupActivity" android:screenOrientation="portrait" />
+        <activity android:name=".DiagnosticsActivity" android:screenOrientation="portrait" />
+        <activity android:name=".InfoActivity" android:screenOrientation="portrait" />
+
+        <receiver android:name=".InstallResultReceiver" android:exported="false" />
+    </application>
+</manifest>
