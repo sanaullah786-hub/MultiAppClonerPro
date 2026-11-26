@@ -124,22 +124,31 @@ public class CloneManagerActivity extends Activity {
 
     private void showMenu(final CloneProfile p) {
         final boolean active = CloneRepository.STATUS_ACTIVE.equals(p.status);
-        String[] items = active ? new String[]{"Open clone", "View details", "Rename", "Delete"}
-                                : new String[]{"View details", "Rename", "Delete"};
-        final int off = active ? 1 : 0;
-        new AlertDialog.Builder(this).setTitle(p.cloneName).setItems(items, new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface d, int which) {
-                if (active && which == 0) {
-                    if (!CloneState.launch(CloneManagerActivity.this, p))
-                        Toast.makeText(CloneManagerActivity.this, "Could not open the clone.", Toast.LENGTH_LONG).show();
-                    return;
+        Drawable ic;
+        try {
+            ic = getPackageManager().getApplicationIcon(p.packageName);
+        } catch (Exception e) {
+            ic = getResources().getDrawable(android.R.drawable.sym_def_app_icon);
+        }
+        String how = CloneRepository.METHOD_VIRTUAL.equals(p.method) ? "Virtual clone" : CloneRepository.METHOD_REAL.equals(p.method) ? "Installed clone" : "Profile";
+        Sheet sh = Sheet.actions(this, ic, p.cloneName, p.appName + "  •  " + how);
+        if (active) {
+            sh.item("▶", "Open clone", "Run it now", Ui.GREEN, new Runnable() {
+                public void run() {
+                    if (!CloneState.launch(CloneManagerActivity.this, p)) EngineLog.launchFailed(CloneManagerActivity.this, p.cloneName);
                 }
-                int w = which - off;
-                if (w == 0) showDetails(p);
-                else if (w == 1) showRename(p);
-                else showDelete(p);
-            }
-        }).show();
+            });
+        }
+        sh.item("ℹ", "View details", "Storage, Google services, activity log", Ui.CYAN, new Runnable() {
+            public void run() { showDetails(p); }
+        });
+        sh.item("✎", "Rename", "Change the clone's name", Ui.PURPLE, new Runnable() {
+            public void run() { showRename(p); }
+        });
+        sh.item("🗑", "Delete", "Remove this clone and its data", Ui.RED, new Runnable() {
+            public void run() { showDelete(p); }
+        });
+        sh.show();
     }
 
     private void showDetails(CloneProfile p) {
@@ -149,40 +158,34 @@ public class CloneManagerActivity extends Activity {
     }
 
     private void showRename(final CloneProfile p) {
-        final EditText input = new EditText(this);
-        input.setSingleLine(true);
-        input.setText(p.cloneName);
-        input.setSelection(p.cloneName.length());
-        new AlertDialog.Builder(this).setTitle("Rename clone").setView(input)
-            .setNegativeButton("Cancel", null)
-            .setPositiveButton("Save", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface d, int w) {
-                    String n = input.getText().toString();
-                    String err = CloneRepository.validateName(n);
-                    if (err != null) { Toast.makeText(CloneManagerActivity.this, err, Toast.LENGTH_LONG).show(); return; }
-                    long r = repo.rename(p, n);
-                    if (r == CloneRepository.DUPLICATE) {
-                        Toast.makeText(CloneManagerActivity.this, "A clone with this name already exists for " + p.appName + ".", Toast.LENGTH_LONG).show();
-                    } else if (r < 0) {
-                        Toast.makeText(CloneManagerActivity.this, "Rename failed. Nothing was changed.", Toast.LENGTH_LONG).show();
-                    } else {
-                        reload();
-                    }
+        Sheet.input(this, "Rename clone", p.cloneName, "Save", new Sheet.TextResult() {
+            public void onText(String n) {
+                String err = CloneRepository.validateName(n);
+                if (err != null) { Toast.makeText(CloneManagerActivity.this, err, Toast.LENGTH_LONG).show(); return; }
+                long r = repo.rename(p, n);
+                if (r == CloneRepository.DUPLICATE) {
+                    Toast.makeText(CloneManagerActivity.this, "A clone with this name already exists for " + p.appName + ".", Toast.LENGTH_LONG).show();
+                } else if (r < 0) {
+                    Toast.makeText(CloneManagerActivity.this, "Rename failed. Nothing was changed.", Toast.LENGTH_LONG).show();
+                } else {
+                    reload();
                 }
-            }).show();
+            }
+        });
     }
 
     private void showDelete(final CloneProfile p) {
-        new AlertDialog.Builder(this).setTitle("Delete profile?")
-            .setMessage("\"" + p.cloneName + "\" will be removed from this app's list. If the clone app is installed it stays on your device until you uninstall it (use Clone details). The original app and other clones are not touched.")
-            .setNegativeButton("Cancel", null)
-            .setPositiveButton("Delete", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface d, int w) {
+        boolean virt = CloneRepository.METHOD_VIRTUAL.equals(p.method);
+        Sheet.confirm(this, "Delete \"" + p.cloneName + "\"?",
+            virt ? "The virtual clone and all data saved inside it are erased. The original app and other clones are not touched."
+                 : "It is removed from this list. If the clone app is installed it stays on your device until you uninstall it from Clone details.",
+            "Delete", true, new Runnable() {
+                public void run() {
                     CloneState.cleanup(p);
                     if (repo.delete(p.id)) reload();
                     else Toast.makeText(CloneManagerActivity.this, "Delete failed. Nothing was changed.", Toast.LENGTH_LONG).show();
                 }
-            }).show();
+            });
     }
 
     private class CloneAdapter extends BaseAdapter {

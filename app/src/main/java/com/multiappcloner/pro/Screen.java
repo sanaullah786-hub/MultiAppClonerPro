@@ -88,15 +88,12 @@ public abstract class Screen extends Activity {
     }
 
     protected void confirm(String title, String msg, String yes, final Runnable onYes) {
-        new AlertDialog.Builder(this).setTitle(title).setMessage(msg)
-            .setNegativeButton("Cancel", null)
-            .setPositiveButton(yes, new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface d, int w) { onYes.run(); }
-            }).show();
+        boolean danger = yes != null && (yes.startsWith("Delete") || yes.startsWith("Remove") || yes.startsWith("Clear") || yes.startsWith("Uninstall"));
+        Sheet.confirm(this, title, msg, yes, danger, onYes);
     }
 
     protected void info(String title, String msg) {
-        new AlertDialog.Builder(this).setTitle(title).setMessage(msg).setPositiveButton("OK", null).show();
+        Sheet.message(this, title, msg);
     }
 
     @Override
