@@ -45,13 +45,16 @@ public class SettingsActivity extends Screen {
         }
         LinearLayout d = Ui.card(this);
         d.addView(Ui.row(this, "Network for new clones", def));
-        d.addView(Ui.text(this, "Only stored as metadata on new profiles. The default clone method is always \"not assigned\" because no cloning engine exists.", 11, Ui.TEXT2, false));
+        d.addView(Ui.text(this, "Stored on new clone profiles as a reference to the network you chose. It does not route a clone's traffic.", 11, Ui.TEXT2, false));
         Ui.add(body, d);
         Ui.add(body, Ui.button(this, "Choose default network profile", false, new View.OnClickListener() {
             public void onClick(View v) { chooseDefaultNetwork(); }
         }));
 
         Ui.add(body, Ui.section(this, "Data and diagnostics"));
+        Ui.add(body, Ui.button(this, "Storage (internal / SD card)", false, new View.OnClickListener() {
+            public void onClick(View v) { startActivity(new Intent(SettingsActivity.this, StorageActivity.class)); }
+        }));
         Ui.add(body, Ui.button(this, "Data management", false, new View.OnClickListener() {
             public void onClick(View v) { startActivity(new Intent(SettingsActivity.this, DataManagementActivity.class)); }
         }));

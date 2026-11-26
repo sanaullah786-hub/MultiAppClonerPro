@@ -10,10 +10,31 @@ import top.niunaijun.blackbox.utils.FileUtils;
 
 public class BEnvironment {
     private static final File sVirtualRoot = new File(BlackBoxCore.getContext().getCacheDir().getParent(), "blackbox");
-    private static final File sExternalVirtualRoot = BlackBoxCore.getContext().getExternalFilesDir("blackbox");
+    private static final File sExternalVirtualRoot = resolveExternalRoot();
 
     public static File JUNIT_JAR = new File(getCacheDir(), "junit.apk");
     public static File EMPTY_JAR = new File(getCacheDir(), "empty.apk");
+
+    /** Marker file written by the host app when the user chooses to keep guest storage on the SD card. */
+    public static final String SD_MARKER = "guest_storage_sd";
+
+    private static File resolveExternalRoot() {
+        android.content.Context c = BlackBoxCore.getContext();
+        try {
+            if (new File(c.getFilesDir(), SD_MARKER).exists()) {
+                File[] dirs = c.getExternalFilesDirs("blackbox");
+                for (int i = 1; dirs != null && i < dirs.length; i++) {
+                    File d = dirs[i];
+                    if (d != null && android.os.Environment.isExternalStorageRemovable(d)) {
+                        d.mkdirs();
+                        if (d.canWrite()) return d;
+                    }
+                }
+            }
+        } catch (Throwable ignored) {
+        }
+        return c.getExternalFilesDir("blackbox");
+    }
 
     public static void load() {
         FileUtils.mkdirs(sVirtualRoot);
