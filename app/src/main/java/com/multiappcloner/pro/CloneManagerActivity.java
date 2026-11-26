@@ -134,9 +134,7 @@ public class CloneManagerActivity extends Activity {
         Sheet sh = Sheet.actions(this, ic, p.cloneName, p.appName + "  •  " + how);
         if (active) {
             sh.item("▶", "Open clone", "Run it now", Ui.GREEN, new Runnable() {
-                public void run() {
-                    if (!CloneState.launch(CloneManagerActivity.this, p)) EngineLog.launchFailed(CloneManagerActivity.this, p.cloneName);
-                }
+                public void run() { CloneState.open(CloneManagerActivity.this, p); }
             });
         }
         sh.item("ℹ", "View details", "Storage, Google services, activity log", Ui.CYAN, new Runnable() {

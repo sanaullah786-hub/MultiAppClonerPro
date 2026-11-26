@@ -80,8 +80,7 @@ public class CloneDetailsActivity extends Screen {
         if (active) {
             Ui.add(body, Ui.button(this, "Open clone", true, new View.OnClickListener() {
                 public void onClick(View v) {
-                    if (!CloneState.launch(CloneDetailsActivity.this, p))
-                        EngineLog.launchFailed(CloneDetailsActivity.this, p.cloneName);
+                    CloneState.open(CloneDetailsActivity.this, p);
                 }
             }));
             if (virt) {

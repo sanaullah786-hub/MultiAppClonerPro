@@ -51,7 +51,7 @@ public class IAppOpsManagerProxy extends BinderInvocationStub {
             methodName.startsWith("note") || 
             methodName.startsWith("start")) {
             Slog.d(TAG, "AppOps invoke: Bypassing system for " + methodName + ", allowing operation");
-            return AppOpsManager.MODE_ALLOWED;
+            return allowed(method, args);
         }
         
         
@@ -68,12 +68,45 @@ public class IAppOpsManagerProxy extends BinderInvocationStub {
         } catch (SecurityException e) {
             
             Slog.w(TAG, "AppOps invoke: SecurityException caught for " + methodName + ", allowing operation", e);
-            return AppOpsManager.MODE_ALLOWED;
+            return allowed(method, args);
         } catch (Exception e) {
             Slog.e(TAG, "AppOps invoke: Error in method " + methodName, e);
             
-            return AppOpsManager.MODE_ALLOWED;
+            return allowed(method, args);
         }
+    }
+
+    /**
+     * "Allowed" result in the type the caller expects. Since Android 11 note/start operations return a
+     * SyncNotedAppOp object, not an int; returning an Integer there crashes the guest app with a ClassCastException.
+     */
+    static Object allowed(Method method, Object[] args) {
+        Class<?> rt = method == null ? int.class : method.getReturnType();
+        if (rt == int.class || rt == Integer.class || rt == Object.class) return AppOpsManager.MODE_ALLOWED;
+        if (rt == void.class) return null;
+        if (rt == boolean.class || rt == Boolean.class) return Boolean.TRUE;
+        if ("android.app.SyncNotedAppOp".equals(rt.getName())) {
+            int op = 0;
+            String pkg = BlackBoxCore.getHostPkg();
+            try { if (args != null && args.length > 0 && args[0] instanceof Integer) op = (Integer) args[0]; } catch (Throwable ignored) { }
+            try {
+                for (java.lang.reflect.Constructor<?> c : rt.getDeclaredConstructors()) {
+                    Class<?>[] t = c.getParameterTypes();
+                    c.setAccessible(true);
+                    if (t.length == 4 && t[0] == int.class && t[1] == int.class && t[2] == String.class && t[3] == String.class)
+                        return c.newInstance(AppOpsManager.MODE_ALLOWED, op, null, pkg);
+                }
+                for (java.lang.reflect.Constructor<?> c : rt.getDeclaredConstructors()) {
+                    Class<?>[] t = c.getParameterTypes();
+                    c.setAccessible(true);
+                    if (t.length == 2 && t[0] == int.class && t[1] == String.class) return c.newInstance(op, null);
+                }
+            } catch (Throwable e) {
+                Slog.w(TAG, "Could not build SyncNotedAppOp", e);
+            }
+            return null;
+        }
+        return AppOpsManager.MODE_ALLOWED;
     }
 
     @Override
@@ -85,7 +118,7 @@ public class IAppOpsManagerProxy extends BinderInvocationStub {
     public static class NoteProxyOperation extends MethodHook {
         @Override
         protected Object hook(Object who, Method method, Object[] args) throws Throwable {
-            return AppOpsManager.MODE_ALLOWED;
+            return allowed(method, args);
         }
     }
 
@@ -94,7 +127,7 @@ public class IAppOpsManagerProxy extends BinderInvocationStub {
         @Override
         protected Object hook(Object who, Method method, Object[] args) throws Throwable {
             
-            return AppOpsManager.MODE_ALLOWED;
+            return allowed(method, args);
         }
     }
 
@@ -105,7 +138,7 @@ public class IAppOpsManagerProxy extends BinderInvocationStub {
             
             
             Slog.d(TAG, "AppOps CheckOperation: Bypassing system check, allowing operation");
-            return AppOpsManager.MODE_ALLOWED;
+            return allowed(method, args);
         }
     }
 
@@ -116,7 +149,7 @@ public class IAppOpsManagerProxy extends BinderInvocationStub {
         protected Object hook(Object who, Method method, Object[] args) throws Throwable {
             
             Slog.d(TAG, "AppOps CheckOperationForDevice: Bypassing system check, allowing operation");
-            return AppOpsManager.MODE_ALLOWED;
+            return allowed(method, args);
         }
     }
 
@@ -126,7 +159,7 @@ public class IAppOpsManagerProxy extends BinderInvocationStub {
         protected Object hook(Object who, Method method, Object[] args) throws Throwable {
             
             Slog.d(TAG, "AppOps NoteOperation: Bypassing system check, allowing operation");
-            return AppOpsManager.MODE_ALLOWED;
+            return allowed(method, args);
         }
     }
 
@@ -136,7 +169,7 @@ public class IAppOpsManagerProxy extends BinderInvocationStub {
         protected Object hook(Object who, Method method, Object[] args) throws Throwable {
             
             Slog.d(TAG, "AppOps CheckOpNoThrow: Bypassing system check, allowing operation");
-            return AppOpsManager.MODE_ALLOWED;
+            return allowed(method, args);
         }
     }
 
@@ -147,7 +180,7 @@ public class IAppOpsManagerProxy extends BinderInvocationStub {
         protected Object hook(Object who, Method method, Object[] args) throws Throwable {
             
             Slog.d(TAG, "AppOps StartOp: Bypassing system check, allowing operation");
-            return AppOpsManager.MODE_ALLOWED;
+            return allowed(method, args);
         }
     }
 
@@ -157,7 +190,7 @@ public class IAppOpsManagerProxy extends BinderInvocationStub {
         protected Object hook(Object who, Method method, Object[] args) throws Throwable {
             
             Slog.d(TAG, "AppOps StartOpNoThrow: Bypassing system check, allowing operation");
-            return AppOpsManager.MODE_ALLOWED;
+            return allowed(method, args);
         }
     }
 
@@ -188,7 +221,7 @@ public class IAppOpsManagerProxy extends BinderInvocationStub {
                 String name = getOpPublicName(op);
                 if (name != null && (name.contains("RECORD_AUDIO") || name.contains("AUDIO") || name.contains("MICROPHONE"))) {
                     Slog.d(TAG, "AppOps NoteOp: Allowing RECORD_AUDIO operation: " + name);
-                    return AppOpsManager.MODE_ALLOWED;
+                    return allowed(method, args);
                 }
             } catch (Throwable ignored) {
             }
@@ -206,7 +239,7 @@ public class IAppOpsManagerProxy extends BinderInvocationStub {
                 String name = getOpPublicName(op);
                 if (name != null && (name.contains("RECORD_AUDIO") || name.contains("AUDIO") || name.contains("MICROPHONE"))) {
                     Slog.d(TAG, "AppOps NoteOpNoThrow: Allowing RECORD_AUDIO operation: " + name);
-                    return AppOpsManager.MODE_ALLOWED;
+                    return allowed(method, args);
                 }
             } catch (Throwable ignored) {
             }

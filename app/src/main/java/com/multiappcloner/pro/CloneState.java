@@ -49,6 +49,40 @@ public final class CloneState {
         if (p != null && CloneRepository.METHOD_VIRTUAL.equals(p.method) && p.virtualUser >= 0) VirtualEngine.remove(p.packageName, p.virtualUser);
     }
 
+    /**
+     * Opens a clone from a screen. Games and browsers save files to shared storage; on Android 11+ that needs
+     * "All files access" for this app, so it is requested once before the first virtual launch.
+     */
+    public static void open(final android.app.Activity a, final CloneProfile p) {
+        boolean virt = CloneRepository.METHOD_VIRTUAL.equals(p.method);
+        boolean needs = virt && android.os.Build.VERSION.SDK_INT >= 30 && !android.os.Environment.isExternalStorageManager();
+        android.content.SharedPreferences sp = a.getSharedPreferences("clone_state", Context.MODE_PRIVATE);
+        if (needs && !sp.getBoolean("asked_all_files", false)) {
+            sp.edit().putBoolean("asked_all_files", true).apply();
+            Sheet.actions(a, null, "Allow file access", "Needed by browsers, games and chat apps")
+                .item("📂", "Allow all files access", "Opens Android settings, switch it on and come back", Ui.GREEN, new Runnable() {
+                    public void run() {
+                        try {
+                            Intent i = new Intent(android.provider.Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
+                                android.net.Uri.parse("package:" + a.getPackageName()));
+                            a.startActivity(i);
+                        } catch (Exception e) {
+                            a.startActivity(new Intent(android.provider.Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION));
+                        }
+                    }
+                })
+                .item("▶", "Open without it", "Some file operations may fail", Ui.ORANGE, new Runnable() {
+                    public void run() { launchOrExplain(a, p); }
+                }).show();
+            return;
+        }
+        launchOrExplain(a, p);
+    }
+
+    private static void launchOrExplain(android.app.Activity a, CloneProfile p) {
+        if (!launch(a, p)) EngineLog.launchFailed(a, p.cloneName);
+    }
+
     public static boolean launch(Context c, CloneProfile p) {
         if (CloneRepository.METHOD_VIRTUAL.equals(p.method)) return VirtualEngine.launch(p.packageName, p.virtualUser);
         try {
