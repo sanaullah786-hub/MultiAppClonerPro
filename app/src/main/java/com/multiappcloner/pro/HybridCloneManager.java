@@ -28,9 +28,9 @@ public class HybridCloneManager {
         } else {
             a.realReasons.add(a.report.error);
         }
-        a.virtualAvailable = a.report.error == null && !a.report.system && !pkg.equals(c.getPackageName()) && VirtualEngine.isAvailable();
+        a.virtualAvailable = a.report.error == null && !pkg.equals(c.getPackageName()) && VirtualEngine.isAvailable();
         a.virtualReason = a.report.error != null ? a.report.error
-            : a.report.system ? "System apps cannot be cloned."
+            : a.report.system ? "System app: it can run in a virtual space, but system apps may behave differently there."
             : "Runs inside this app with separate data for every clone, like Parallel Space. Apps that use Google sign-in, Play Integrity or strict "
               + "anti-tamper checks may not work inside a virtual space.";
         if (a.realAvailable) a.methods.add("real_apk");

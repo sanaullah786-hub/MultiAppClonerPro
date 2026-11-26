@@ -36,6 +36,7 @@ public final class PackageImporter {
         public String packageName;
         public String label;
         public boolean bundle;
+        public boolean usesGms;
     }
 
     public static Prepared prepare(Context c, File input, File workDir) throws IOException {
@@ -75,12 +76,13 @@ public final class PackageImporter {
                 for (File f : apks) if (!f.equals(p.base)) p.splits.add(f);
             }
             PackageManager pm = c.getPackageManager();
-            PackageInfo pi = pm.getPackageArchiveInfo(p.base.getAbsolutePath(), 0);
+            PackageInfo pi = pm.getPackageArchiveInfo(p.base.getAbsolutePath(), PackageManager.GET_META_DATA);
             if (pi == null || pi.packageName == null) throw new IOException("The main APK could not be read.");
             ApplicationInfo ai = pi.applicationInfo;
             ai.sourceDir = p.base.getAbsolutePath();
             ai.publicSourceDir = p.base.getAbsolutePath();
             CharSequence lab = ai.loadLabel(pm);
+            p.usesGms = VirtualEngine.usesGoogleServices(ai);
             p.packageName = pi.packageName;
             p.label = lab == null || lab.length() == 0 ? pi.packageName : lab.toString();
             return p;
@@ -131,6 +133,10 @@ public final class PackageImporter {
                 warn = " Game data (.obb) could not be copied.";
                 Log.w(TAG, "obb: " + t);
             }
+        }
+        if (p.usesGms && VirtualEngine.isGmsSupported() && !VirtualEngine.isGmsInstalled(userId)) {
+            ApkCloningEngine.Result g = VirtualEngine.installGms(userId);
+            warn += g.success ? " Google services were added for sign-in." : " Google services could not be added.";
         }
         return new ApkCloningEngine.Result(true, "Installed in the virtual space." + warn);
     }

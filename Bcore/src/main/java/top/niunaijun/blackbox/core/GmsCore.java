@@ -63,6 +63,20 @@ public class GmsCore {
             if (!installResult.success) {
                 return installResult;
             }
+            // Google's apps are split APKs: their native libraries live in the splits and must sit beside the base APK.
+            try {
+                android.content.pm.ApplicationInfo ai = BlackBoxCore.getContext().getPackageManager().getApplicationInfo(packageName, 0);
+                if (ai.splitSourceDirs != null) {
+                    for (String s : ai.splitSourceDirs) {
+                        try {
+                            top.niunaijun.blackbox.utils.NativeUtils.copyNativeLib(new java.io.File(s),
+                                top.niunaijun.blackbox.core.env.BEnvironment.getAppLibDir(packageName));
+                        } catch (Throwable ignored) {
+                        }
+                    }
+                }
+            } catch (Throwable ignored) {
+            }
         }
         return new InstallResult();
     }

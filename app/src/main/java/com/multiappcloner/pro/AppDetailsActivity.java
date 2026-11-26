@@ -65,9 +65,9 @@ public class AppDetailsActivity extends Screen {
 
         if (r.system) {
             LinearLayout n = Ui.card(this);
-            n.addView(Ui.badge(this, "UNSUPPORTED APP", Ui.RED));
-            n.addView(Ui.text(this, "This is a system app. Android does not allow it to be cloned or reinstalled under a new package name. "
-                + "Banking, payment, DRM-protected and device-administration apps are also unsuitable.", 13, Ui.TEXT2, false));
+            n.addView(Ui.badge(this, "SYSTEM APP", Ui.ORANGE));
+            n.addView(Ui.text(this, "System apps (for example Chrome or the Play Store) cannot be reinstalled as a separate Android app, but they can run in a virtual clone. "
+                + "Results vary: Google apps need \"Google services\" turned on inside the clone.", 13, Ui.TEXT2, false));
             Ui.add(body, n);
         }
 

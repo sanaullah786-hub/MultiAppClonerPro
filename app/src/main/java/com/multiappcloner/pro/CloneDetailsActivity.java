@@ -85,6 +85,36 @@ public class CloneDetailsActivity extends Screen {
                 }
             }));
             if (virt) {
+                final boolean gms = VirtualEngine.isGmsInstalled(p.virtualUser);
+                Ui.add(body, Ui.button(this, gms ? "Google services: ON (tap to remove)" : "Add Google services (sign-in, Play Store)", false, new View.OnClickListener() {
+                    public void onClick(View v) {
+                        final android.content.Context app = getApplicationContext();
+                        if (!gms && !VirtualEngine.isGmsSupported()) {
+                            Toast.makeText(app, "This phone has no Google Play services to copy.", Toast.LENGTH_LONG).show();
+                            return;
+                        }
+                        Toast.makeText(app, gms ? "Removing Google services..." : "Adding Google services. This can take a minute...", Toast.LENGTH_LONG).show();
+                        exec.execute(new Runnable() {
+                            public void run() {
+                                final String msg;
+                                if (gms) msg = VirtualEngine.uninstallGms(p.virtualUser) ? "Google services removed." : "Could not remove them.";
+                                else { ApkCloningEngine.Result g = VirtualEngine.installGms(p.virtualUser); msg = g.success ? "Google services added. Restart the clone." : "Failed: " + g.message; }
+                                logs.add(p.id, msg);
+                                ui(new Runnable() {
+                                    public void run() { Toast.makeText(CloneDetailsActivity.this, msg, Toast.LENGTH_LONG).show(); rebuild(); }
+                                });
+                            }
+                        });
+                    }
+                }));
+                if (gms) {
+                    Ui.add(body, Ui.button(this, "Open Google Play Store in this clone", false, new View.OnClickListener() {
+                        public void onClick(View v) {
+                            if (!VirtualEngine.launch("com.android.vending", p.virtualUser))
+                                Toast.makeText(CloneDetailsActivity.this, "Could not open the Play Store here.", Toast.LENGTH_LONG).show();
+                        }
+                    }));
+                }
                 Ui.add(body, Ui.button(this, "Stop clone", false, new View.OnClickListener() {
                     public void onClick(View v) {
                         VirtualEngine.stop(p.packageName, p.virtualUser);

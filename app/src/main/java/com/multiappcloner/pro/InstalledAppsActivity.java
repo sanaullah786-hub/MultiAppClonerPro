@@ -150,13 +150,9 @@ public class InstalledAppsActivity extends Activity {
             ((TextView) v.findViewById(R.id.appPkg)).setText(it.packageName);
             TextView st = (TextView) v.findViewById(R.id.appStatus);
             View add = v.findViewById(R.id.btnAdd);
-            if (it.system) {
-                st.setText("Installed  •  System app: cloning unsupported");
-                st.setTextColor(Color.parseColor("#FF4560"));
-                add.setVisibility(View.GONE);
-            } else {
-                st.setText("Installed  •  Compatibility not analyzed yet");
-                st.setTextColor(Color.parseColor("#FFB547"));
+            {
+                st.setText(it.system ? "Installed  •  System app: virtual clone only" : "Installed  •  Compatibility not analyzed yet");
+                st.setTextColor(Color.parseColor(it.system ? "#FFB547" : "#FFB547"));
                 add.setVisibility(View.VISIBLE);
                 add.setOnClickListener(new View.OnClickListener() {
                     public void onClick(View x) {

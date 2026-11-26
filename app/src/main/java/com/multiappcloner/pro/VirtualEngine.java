@@ -33,7 +33,19 @@ public final class VirtualEngine {
             BlackBoxCore core = BlackBoxCore.get();
             try { core.createUser(userId); } catch (Throwable t) { Log.w(TAG, "createUser: " + t); }
             InstallResult r = core.installPackageAsUser(pkg, userId);
-            if (r != null && r.success) return new ApkCloningEngine.Result(true, "Virtual clone ready.");
+            if (r != null && r.success) {
+                String extra = "";
+                android.content.pm.ApplicationInfo ai = null;
+                try { ai = c.getPackageManager().getApplicationInfo(pkg, android.content.pm.PackageManager.GET_META_DATA); } catch (Throwable ignored) { }
+                if (ai != null) {
+                    copySplitLibs(ai, pkg);
+                    if (usesGoogleServices(ai) && isGmsSupported() && !isGmsInstalled(userId)) {
+                        ApkCloningEngine.Result g = installGms(userId);
+                        extra = g.success ? " Google services were added for sign-in." : " Google services could not be added: " + g.message;
+                    }
+                }
+                return new ApkCloningEngine.Result(true, "Virtual clone ready." + extra);
+            }
             return new ApkCloningEngine.Result(false, "Virtual install failed: " + (r == null ? "no result" : r.msg));
         } catch (Throwable t) {
             Log.e(TAG, "install", t);
@@ -55,6 +67,51 @@ public final class VirtualEngine {
             return new ApkCloningEngine.Result(false, "Virtual install failed: " + t.getClass().getSimpleName()
                 + (t.getMessage() == null ? "" : ": " + t.getMessage()));
         }
+    }
+
+    /** Native libraries of split APKs (modern apps ship them separately) must sit next to the base APK. */
+    private static void copySplitLibs(android.content.pm.ApplicationInfo ai, String pkg) {
+        if (ai.splitSourceDirs == null) return;
+        for (String s : ai.splitSourceDirs) {
+            try {
+                top.niunaijun.blackbox.utils.NativeUtils.copyNativeLib(new java.io.File(s),
+                    top.niunaijun.blackbox.core.env.BEnvironment.getAppLibDir(pkg));
+            } catch (Throwable t) {
+                Log.w(TAG, "split libs: " + t);
+            }
+        }
+    }
+
+    /** True when the app depends on Google Play services (it declares the GMS version meta-data). */
+    public static boolean usesGoogleServices(android.content.pm.ApplicationInfo ai) {
+        try {
+            return ai != null && ai.metaData != null && ai.metaData.containsKey("com.google.android.gms.version");
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    public static boolean isGmsSupported() {
+        try { return BlackBoxCore.get().isSupportGms(); } catch (Throwable t) { return false; }
+    }
+
+    public static boolean isGmsInstalled(int userId) {
+        try { return BlackBoxCore.get().isInstallGms(userId); } catch (Throwable t) { return false; }
+    }
+
+    /** Adds this phone's own Google Play services, Play Store and Google Services Framework to the clone's space. */
+    public static ApkCloningEngine.Result installGms(int userId) {
+        try {
+            InstallResult r = BlackBoxCore.get().installGms(userId);
+            return r != null && r.success ? new ApkCloningEngine.Result(true, "Google services installed.")
+                : new ApkCloningEngine.Result(false, r == null ? "no result" : String.valueOf(r.msg));
+        } catch (Throwable t) {
+            return new ApkCloningEngine.Result(false, t.getClass().getSimpleName() + (t.getMessage() == null ? "" : ": " + t.getMessage()));
+        }
+    }
+
+    public static boolean uninstallGms(int userId) {
+        try { return BlackBoxCore.get().uninstallGms(userId); } catch (Throwable t) { return false; }
     }
 
     public static boolean launch(String pkg, int userId) {
