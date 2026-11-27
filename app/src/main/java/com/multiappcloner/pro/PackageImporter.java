@@ -37,6 +37,8 @@ public final class PackageImporter {
         public String label;
         public boolean bundle;
         public boolean usesGms;
+        public boolean merged;
+        public final List<File> mergedFrom = new ArrayList<File>();
     }
 
     public static Prepared prepare(Context c, File input, File workDir) throws IOException {
@@ -74,6 +76,15 @@ public final class PackageImporter {
                 if (apks.isEmpty()) throw new IOException("No APK found inside this bundle.");
                 p.base = pickBase(c, apks);
                 for (File f : apks) if (!f.equals(p.base)) p.splits.add(f);
+                if (!p.splits.isEmpty()) {
+                    File merged = SplitMerger.merge(apks, workDir, "bundle");
+                    if (merged != null) {
+                        p.mergedFrom.addAll(apks);
+                        p.base = merged;
+                        p.splits.clear();
+                        p.merged = true;
+                    }
+                }
             }
             PackageManager pm = c.getPackageManager();
             PackageInfo pi = pm.getPackageArchiveInfo(p.base.getAbsolutePath(), PackageManager.GET_META_DATA);
@@ -145,6 +156,7 @@ public final class PackageImporter {
         if (p == null) return;
         if (p.bundle) {
             if (p.base != null) p.base.delete();
+            for (File f : p.mergedFrom) f.delete();
             for (File f : p.splits) f.delete();
             for (File f : p.obbs) f.delete();
         }

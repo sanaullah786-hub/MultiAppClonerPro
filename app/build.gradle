@@ -50,4 +50,5 @@ android {
 
 dependencies {
     implementation project(':Bcore')
+    implementation 'io.github.reandroid:ARSCLib:1.3.5'
 }

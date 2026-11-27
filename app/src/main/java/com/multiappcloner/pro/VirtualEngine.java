@@ -32,13 +32,28 @@ public final class VirtualEngine {
             if (pkg.equals(c.getPackageName())) return new ApkCloningEngine.Result(false, "This app cannot clone itself.");
             BlackBoxCore core = BlackBoxCore.get();
             try { core.createUser(userId); } catch (Throwable t) { Log.w(TAG, "createUser: " + t); }
-            InstallResult r = core.installPackageAsUser(pkg, userId);
+            android.content.pm.ApplicationInfo ai = null;
+            try { ai = c.getPackageManager().getApplicationInfo(pkg, android.content.pm.PackageManager.GET_META_DATA); } catch (Throwable ignored) { }
+            java.io.File mergedApk = null;
+            InstallResult r;
+            if (ai != null && ai.splitSourceDirs != null && ai.splitSourceDirs.length > 0) {
+                java.util.List<java.io.File> parts = new java.util.ArrayList<java.io.File>();
+                parts.add(new java.io.File(ai.sourceDir));
+                for (String s : ai.splitSourceDirs) parts.add(new java.io.File(s));
+                java.io.File work = new java.io.File(c.getCacheDir(), "split_merge");
+                work.mkdirs();
+                mergedApk = SplitMerger.merge(parts, work, pkg);
+            }
+            if (mergedApk != null) {
+                r = core.installPackageAsUser(mergedApk, userId);
+                mergedApk.delete();
+            } else {
+                r = core.installPackageAsUser(pkg, userId);
+            }
             if (r != null && r.success) {
                 String extra = "";
-                android.content.pm.ApplicationInfo ai = null;
-                try { ai = c.getPackageManager().getApplicationInfo(pkg, android.content.pm.PackageManager.GET_META_DATA); } catch (Throwable ignored) { }
                 if (ai != null) {
-                    copySplitLibs(ai, pkg);
+                    if (mergedApk == null) copySplitLibs(ai, pkg);
                     if (usesGoogleServices(ai) && isGmsSupported() && !isGmsInstalled(userId)) {
                         ApkCloningEngine.Result g = installGms(userId);
                         extra = g.success ? " Google services were added for sign-in." : " Google services could not be added: " + g.message;
