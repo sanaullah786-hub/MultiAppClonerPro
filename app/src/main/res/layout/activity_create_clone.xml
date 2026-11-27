@@ -26,7 +26,7 @@
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="24dp"
                 android:text="Clone name" android:textColor="@color/cyan" android:textSize="13sp" />
             <EditText android:id="@+id/cloneName" android:layout_width="match_parent" android:layout_height="48dp"
-                android:layout_marginTop="6dp" android:background="@drawable/bg_card" android:maxLength="20"
+                android:layout_marginTop="6dp" android:background="@drawable/bg_card" android:maxLength="30"
                 android:paddingLeft="14dp" android:paddingRight="14dp" android:singleLine="true"
                 android:textColor="@color/text" android:textSize="15sp" />
             <TextView android:id="@+id/counter" android:layout_width="match_parent" android:layout_height="wrap_content"

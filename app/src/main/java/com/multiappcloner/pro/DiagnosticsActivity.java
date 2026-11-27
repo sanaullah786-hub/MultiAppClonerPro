@@ -47,6 +47,12 @@ public class DiagnosticsActivity extends Screen {
         Ui.add(body, Ui.button(this, "Copy engine log (for support)", false, new View.OnClickListener() {
             public void onClick(View v) { EngineLog.copy(DiagnosticsActivity.this); }
         }));
+        Ui.add(body, Ui.button(this, "Stop all running clones", false, new View.OnClickListener() {
+            public void onClick(View v) {
+                CloneState.stopAll(DiagnosticsActivity.this);
+                Toast.makeText(DiagnosticsActivity.this, "All clones stopped.", Toast.LENGTH_SHORT).show();
+            }
+        }));
         Ui.add(body, Ui.button(this, "Refresh", false, new View.OnClickListener() {
             public void onClick(View v) { rebuild(); load(); }
         }));

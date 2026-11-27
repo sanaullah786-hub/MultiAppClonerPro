@@ -158,7 +158,7 @@ public class ImportApkActivity extends Screen {
             cp.status = CloneRepository.STATUS_INSTALLING;
             cp.virtualUser = repo.nextVirtualUser();
             cp.createdAt = System.currentTimeMillis();
-            String name = p.label.length() > 12 ? p.label.substring(0, 12) : p.label;
+            String name = p.label.length() > 14 ? p.label.substring(0, 14).trim() : p.label;
             long id = CloneRepository.DUPLICATE;
             for (int n = 1; n < 50 && id == CloneRepository.DUPLICATE; n++) {
                 cp.cloneName = name + " - File " + n;

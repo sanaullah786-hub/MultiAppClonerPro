@@ -61,8 +61,7 @@ public class CreateCloneActivity extends Activity {
         counter = (TextView) findViewById(R.id.counter);
         error = (TextView) findViewById(R.id.error);
 
-        String def = label + " - Clone " + (repo.countForPackage(pkg) + 1);
-        if (def.length() > CloneRepository.MAX_NAME) def = def.substring(0, CloneRepository.MAX_NAME);
+        String def = repo.defaultName(pkg, label);
         name.setText(def);
         name.setSelection(def.length());
         updateCounter();

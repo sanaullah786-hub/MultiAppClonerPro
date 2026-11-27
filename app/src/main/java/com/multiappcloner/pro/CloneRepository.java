@@ -19,7 +19,7 @@ public class CloneRepository {
     public static final String STATUS_ACTIVE = "active";
     public static final String STATUS_FAILED = "failed";
     public static final String STATUS_REMOVED = "removed";
-    public static final int MAX_NAME = 20;
+    public static final int MAX_NAME = 30;
 
     private final DatabaseHelper helper;
 
@@ -116,6 +116,20 @@ public class CloneRepository {
 
     public int countActive() {
         return scalar("SELECT COUNT(*) FROM " + DatabaseHelper.T_CLONES + " WHERE status=?", new String[]{STATUS_ACTIVE});
+    }
+
+    /** "App - Clone N" with the lowest free number; the number is never cut off, only the app name is shortened. */
+    public String defaultName(String pkg, String label) {
+        int n = countForPackage(pkg) + 1;
+        for (int guard = 0; guard < 200; guard++, n++) {
+            String suffix = " - Clone " + n;
+            String base = label == null ? "App" : label;
+            int room = MAX_NAME - suffix.length();
+            if (base.length() > room) base = base.substring(0, Math.max(1, room)).trim();
+            String name = base + suffix;
+            if (!nameExists(pkg, name, -1)) return name;
+        }
+        return (label == null ? "App" : label) + " - " + System.currentTimeMillis() % 10000;
     }
 
     public int countForPackage(String pkg) {

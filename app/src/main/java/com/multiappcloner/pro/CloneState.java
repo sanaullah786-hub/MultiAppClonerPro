@@ -79,7 +79,36 @@ public final class CloneState {
         launchOrExplain(a, p);
     }
 
-    private static void launchOrExplain(android.app.Activity a, CloneProfile p) {
+    /** Stops every running virtual clone (frees RAM). */
+    public static void stopAll(Context c) {
+        try {
+            for (CloneProfile q : new CloneRepository(c).getAll())
+                if (CloneRepository.METHOD_VIRTUAL.equals(q.method)) VirtualEngine.stop(q.packageName, q.virtualUser);
+        } catch (Throwable ignored) { }
+    }
+
+    private static boolean lowMemory(Context c) {
+        try {
+            android.app.ActivityManager am = (android.app.ActivityManager) c.getSystemService(Context.ACTIVITY_SERVICE);
+            android.app.ActivityManager.MemoryInfo mi = new android.app.ActivityManager.MemoryInfo();
+            am.getMemoryInfo(mi);
+            return mi.lowMemory || mi.availMem < 450L * 1024 * 1024;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    private static void launchOrExplain(final android.app.Activity a, final CloneProfile p) {
+        if (CloneRepository.METHOD_VIRTUAL.equals(p.method) && lowMemory(a)) {
+            Sheet.actions(a, null, "Low memory", "Clones run in this phone's RAM")
+                .item("⏹", "Stop other clones, then open", "Frees memory for this one", Ui.GREEN, new Runnable() {
+                    public void run() { stopAll(a); if (!launch(a, p)) EngineLog.launchFailed(a, p.cloneName); }
+                })
+                .item("▶", "Open anyway", "The app may hang or close", Ui.ORANGE, new Runnable() {
+                    public void run() { if (!launch(a, p)) EngineLog.launchFailed(a, p.cloneName); }
+                }).show();
+            return;
+        }
         if (!launch(a, p)) EngineLog.launchFailed(a, p.cloneName);
     }
 
