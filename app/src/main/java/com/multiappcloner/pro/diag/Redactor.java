@@ -11,7 +11,7 @@ public final class Redactor {
         "(?i)\\b(password|passwd|pwd|pass|token|access_token|refresh_token|id_token|secret|client_secret|api[_-]?key|apikey|auth|session(?:id)?|cookie|sid|otp|pin)\\b(\\s*[=:]\\s*)(\"[^\"]*\"|'[^']*'|[^\\s,;&\"']+)");
     private static final Pattern URL_QUERY = Pattern.compile("(?i)([?&](?:token|key|code|password|auth|access_token|sig|signature)=)[^&\\s]+");
     private static final Pattern PHONE = Pattern.compile("(?<![\\w.:])\\+?\\d(?:[ \\-.()]?\\d){8,14}(?![\\w.:])");
-    private static final Pattern LONG_SECRET = Pattern.compile("\\b[A-Za-z0-9_\\-]{32,}\\b");
+    private static final Pattern LONG_SECRET = Pattern.compile("(?<![A-Za-z0-9_\\-./~=])[A-Za-z0-9_\\-]{32,}(?![A-Za-z0-9_\\-])");
     private static final Pattern JWT = Pattern.compile("\\beyJ[A-Za-z0-9_\\-]+\\.[A-Za-z0-9_\\-]+\\.[A-Za-z0-9_\\-]*");
     private static final Pattern ANDROID_ID = Pattern.compile("(?i)(android_?id|imei|serial|advertising_?id|gaid)(\\s*[=:]\\s*)[A-Za-z0-9\\-]{6,}");
 

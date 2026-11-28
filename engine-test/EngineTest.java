@@ -342,6 +342,18 @@ public class EngineTest {
         zf.close();
         checkAlignment(signed);
 
+        // an already signed APK (as produced by merge tools) must be accepted and re-signed
+        boolean refused = false;
+        try { ApkV2Signer.sign(signed, new File(dir, "twice.apk"), key, cert); } catch (java.io.IOException e) { refused = e.getMessage().contains("signing block"); }
+        check(refused, "signing an APK that already has a signing block is refused (the bug seen on the phone)");
+        File resigned = new File(dir, "resigned.apk");
+        ApkResigner.resign(signed, resigned, key, cert);
+        verifyV2(resigned, cert.getPublicKey());
+        zf = new ZipFile(resigned);
+        check(Arrays.equals(read(zf, "classes.dex"), dex) && Arrays.equals(read(zf, "lib/arm64-v8a/libfoo.so"), so), "re-signed APK keeps its content");
+        zf.close();
+        checkAlignment(resigned);
+
         // tamper test: flipping one byte in an entry must invalidate the digest
         byte[] all = java.nio.file.Files.readAllBytes(signed.toPath());
         all[100] ^= 1;

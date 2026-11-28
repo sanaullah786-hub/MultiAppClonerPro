@@ -31,6 +31,8 @@ public class DiagTest {
         check(Redactor.redact(keep).equals(keep), "stack trace text is not damaged");
         check(Redactor.redact("12-01 10:22:33.456  1234  5678 E Tag: x").contains("10:22:33.456"), "timestamps and pids are kept");
         check(Redactor.redact("versionCode 2024101500 sdk 34").contains("2024101500"), "plain numbers without separators are kept");
+        String path = "linked: /data/app/~~RkUnHgfiVBWKDElAAzoxVg==/com.google.android.trichromelibrary_716309033-7SZ3LuBPbDn2hf5UGHDWYg==/base.apk";
+        check(Redactor.redact(path).equals(path), "package paths are not mistaken for secrets");
         check(Redactor.redact(null) == null && Redactor.redact("").equals(""), "null/empty safe");
         check(Redactor.redact("android_id=9774d56d682e549c ok").contains("android_id=[redacted]"), "device identifiers removed");
 

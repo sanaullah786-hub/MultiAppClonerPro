@@ -77,7 +77,7 @@ public final class PackageImporter {
                 p.base = pickBase(c, apks);
                 for (File f : apks) if (!f.equals(p.base)) p.splits.add(f);
                 if (!p.splits.isEmpty()) {
-                    File merged = SplitMerger.merge(apks, workDir, "bundle");
+                    File merged = SplitMerger.merge(c, apks, workDir, "bundle");
                     if (merged != null) {
                         p.mergedFrom.addAll(apks);
                         p.base = merged;

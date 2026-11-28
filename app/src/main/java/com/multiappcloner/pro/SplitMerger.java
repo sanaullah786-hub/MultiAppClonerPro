@@ -13,7 +13,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
 
-import com.multiappcloner.pro.engine.ApkV2Signer;
+import com.multiappcloner.pro.engine.ApkResigner;
 
 /**
  * Merges a base APK and its split APKs (config / feature splits) into one installable APK, because the
@@ -23,7 +23,7 @@ import com.multiappcloner.pro.engine.ApkV2Signer;
 public final class SplitMerger {
     private static final String TAG = "SplitMerger";
 
-    public static File merge(List<File> apks, File workDir, String outName) {
+    public static File merge(android.content.Context ctx, List<File> apks, File workDir, String outName) {
         File dir = new File(workDir, "merge_in");
         File raw = new File(workDir, outName + "_merged_raw.apk");
         File out = new File(workDir, outName + "_merged.apk");
@@ -39,7 +39,10 @@ public final class SplitMerger {
             merged.close();
             bundle.close();
             CloneKeys.Keys k = CloneKeys.get();
-            ApkV2Signer.sign(raw, out, k.key, k.cert);
+            ApkResigner.resign(raw, out, k.key, k.cert);
+            android.content.pm.PackageInfo check = ctx.getPackageManager().getPackageArchiveInfo(out.getAbsolutePath(), 0);
+            if (check == null) throw new IOException("Android cannot read the merged APK.");
+            Diag.event(Diag.INSTALL, "split merge ok: " + check.packageName + " from " + apks.size() + " files, " + (out.length() >> 20) + " MB");
             return out;
         } catch (Throwable t) {
             Log.w(TAG, "merge failed: " + t, t);

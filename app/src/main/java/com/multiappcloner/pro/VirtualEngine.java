@@ -42,7 +42,7 @@ public final class VirtualEngine {
                 for (String s : ai.splitSourceDirs) parts.add(new java.io.File(s));
                 java.io.File work = new java.io.File(c.getCacheDir(), "split_merge");
                 work.mkdirs();
-                mergedApk = SplitMerger.merge(parts, work, pkg);
+                mergedApk = SplitMerger.merge(c, parts, work, pkg);
             }
             java.util.List<java.io.File> parts2 = new java.util.ArrayList<java.io.File>();
             if (mergedApk != null) parts2.add(mergedApk);
@@ -55,9 +55,11 @@ public final class VirtualEngine {
             recordSharedLibraries(pkg, ai);
             if (mergedApk != null) {
                 r = core.installPackageAsUser(mergedApk, userId);
+                for (int tries = 0; r == null && tries < 2; tries++) { retryPause("install", pkg, userId); r = core.installPackageAsUser(mergedApk, userId); }
                 mergedApk.delete();
             } else {
                 r = core.installPackageAsUser(pkg, userId);
+                for (int tries = 0; r == null && tries < 2; tries++) { retryPause("install", pkg, userId); r = core.installPackageAsUser(pkg, userId); }
             }
             if (r != null && r.success) {
                 String extra = notes;
@@ -91,6 +93,7 @@ public final class VirtualEngine {
             prepareUser(core, pkgName, userId);
             String notes = compatNotes(pkgName, java.util.Collections.singletonList(apk), false, false);
             r = core.installPackageAsUser(apk, userId);
+            for (int tries = 0; r == null && tries < 2; tries++) { retryPause("install", pkgName, userId); r = core.installPackageAsUser(apk, userId); }
             if (r != null && r.success) {
                 Diag.event(Diag.INSTALL, "virtual apk install ok: " + pkgName + " user " + userId);
                 return new ApkCloningEngine.Result(true, "Installed in the virtual space." + notes);
@@ -104,6 +107,31 @@ public final class VirtualEngine {
             return new ApkCloningEngine.Result(false, "Virtual install failed: " + t.getClass().getSimpleName()
                 + (t.getMessage() == null ? "" : ": " + t.getMessage()));
         }
+    }
+
+    /** The engine's service process may still be starting or recovering; wait briefly before asking again. */
+    private static void retryPause(String what, String pkg, int userId) {
+        Diag.event(Diag.ENGINE, "engine gave no answer for " + what + " of " + pkg + " user " + userId + ", retrying in 1.5 s");
+        try { Thread.sleep(1500); } catch (InterruptedException ignored) { Thread.currentThread().interrupt(); }
+    }
+
+    /** What the engine knows about a package right now, to explain a refused launch. */
+    private static String launchProbe(String pkg, int userId) {
+        StringBuilder sb = new StringBuilder();
+        try {
+            sb.append("installed=").append(BlackBoxCore.get().isInstalled(pkg, userId));
+        } catch (Throwable t) { sb.append("installed=?(").append(t.getClass().getSimpleName()).append(')'); }
+        String[] cats = {android.content.Intent.CATEGORY_LAUNCHER, android.content.Intent.CATEGORY_INFO};
+        for (String cat : cats) {
+            try {
+                android.content.Intent q = new android.content.Intent(android.content.Intent.ACTION_MAIN);
+                q.addCategory(cat);
+                q.setPackage(pkg);
+                java.util.List<android.content.pm.ResolveInfo> l = BlackBoxCore.getBPackageManager().queryIntentActivities(q, 0, null, userId);
+                sb.append(' ').append(cat.substring(cat.lastIndexOf('.') + 1)).append("_activities=").append(l == null ? "null" : String.valueOf(l.size()));
+            } catch (Throwable t) { sb.append(' ').append(cat.substring(cat.lastIndexOf('.') + 1)).append("=?(").append(t.getClass().getSimpleName()).append(')'); }
+        }
+        return sb.toString();
     }
 
     private static String packageOf(Context c, java.io.File apk) {
@@ -250,6 +278,12 @@ public final class VirtualEngine {
     public static boolean launch(String pkg, int userId) {
         try {
             boolean ok = BlackBoxCore.get().launchApk(pkg, userId);
+            for (int tries = 0; !ok && tries < 2; tries++) {
+                Diag.event(Diag.LAUNCH, "launch refused for " + pkg + " user " + userId + "; engine state: " + launchProbe(pkg, userId));
+                retryPause("launch", pkg, userId);
+                ok = BlackBoxCore.get().launchApk(pkg, userId);
+            }
+            if (!ok) Diag.event(Diag.LAUNCH, "launch still refused after retries; engine state: " + launchProbe(pkg, userId));
             Diag.event(Diag.LAUNCH, (ok ? "launch requested " : "launch refused by the engine (no launch intent) ") + pkg + " user " + userId + " " + Diag.memoryLine());
             return ok;
         } catch (Throwable t) {
