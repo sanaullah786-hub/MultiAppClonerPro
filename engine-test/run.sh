@@ -9,3 +9,5 @@ javac -encoding UTF-8 -d "$OUT/classes" app/src/main/java/com/multiappcloner/pro
 java -Dfile.encoding=UTF-8 -cp "$OUT/classes" com.multiappcloner.pro.engine.EngineTest "$OUT/test.p12" testpass
 javac -encoding UTF-8 -d "$OUT/diag" app/src/main/java/com/multiappcloner/pro/diag/*.java engine-test/DiagTest.java
 java -Dfile.encoding=UTF-8 -cp "$OUT/diag" DiagTest
+javac -encoding UTF-8 -d "$OUT/backup" app/src/main/java/com/multiappcloner/pro/backup/*.java engine-test/BackupTest.java
+java -Dfile.encoding=UTF-8 -cp "$OUT/backup" BackupTest

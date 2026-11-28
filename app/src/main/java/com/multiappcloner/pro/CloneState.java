@@ -99,6 +99,19 @@ public final class CloneState {
     }
 
     private static void launchOrExplain(final android.app.Activity a, final CloneProfile p) {
+        if (CloneRepository.METHOD_VIRTUAL.equals(p.method)) {
+            int running = CloneBackup.runningCloneProcesses(a), limit = CloneBackup.cloneLimit(a);
+            if (running >= limit) {
+                Sheet.actions(a, null, "Clone limit reached", running + " clone processes are running (limit " + limit + ")")
+                    .item("⏹", "Stop other clones, then open", "Frees memory for this one", Ui.GREEN, new Runnable() {
+                        public void run() { stopAll(a); if (!launch(a, p)) EngineLog.launchFailed(a, p.cloneName); }
+                    })
+                    .item("▶", "Open anyway", "The phone may become slow", Ui.ORANGE, new Runnable() {
+                        public void run() { if (!launch(a, p)) EngineLog.launchFailed(a, p.cloneName); }
+                    }).show();
+                return;
+            }
+        }
         if (CloneRepository.METHOD_VIRTUAL.equals(p.method) && lowMemory(a)) {
             Sheet.actions(a, null, "Low memory", "Clones run in this phone's RAM")
                 .item("⏹", "Stop other clones, then open", "Frees memory for this one", Ui.GREEN, new Runnable() {

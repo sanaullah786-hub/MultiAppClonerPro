@@ -60,6 +60,17 @@ public class MainActivity extends Activity {
             public void onClick(View v) { Screens.settings(MainActivity.this); }
         });
 
+        LinearLayout r4 = (LinearLayout) findViewById(R.id.row4);
+        addSmall(r4, "🛟  Clone backups", 0, new View.OnClickListener() {
+            public void onClick(View v) { startActivity(new android.content.Intent(MainActivity.this, CloneBackupsActivity.class)); }
+        });
+        addSmall(r4, "🧪  Compatibility", 10, new View.OnClickListener() {
+            public void onClick(View v) { startActivity(new android.content.Intent(MainActivity.this, CompatibilityActivity.class)); }
+        });
+        addSmall(r4, "🩺  Diagnostics", 10, new View.OnClickListener() {
+            public void onClick(View v) { startActivity(new android.content.Intent(MainActivity.this, DiagnosticsActivity.class)); }
+        });
+
         statTotal = addStat((LinearLayout) findViewById(R.id.statsRow1), "Total Clone Profiles", "0", true);
         statInstalled = addStat((LinearLayout) findViewById(R.id.statsRow1), "Installed Apps", "…", false);
         statActive = addStat((LinearLayout) findViewById(R.id.statsRow2), "Active Clone Profiles", "0", true);

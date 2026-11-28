@@ -114,6 +114,9 @@ public class CloneDetailsActivity extends Screen {
                         }
                     }));
                 }
+                Ui.add(body, Ui.button(this, "Back up / restore clone data", false, new View.OnClickListener() {
+                    public void onClick(View v) { startActivity(new android.content.Intent(CloneDetailsActivity.this, CloneBackupsActivity.class)); }
+                }));
                 Ui.add(body, Ui.button(this, "Stop clone", false, new View.OnClickListener() {
                     public void onClick(View v) {
                         VirtualEngine.stop(p.packageName, p.virtualUser);
@@ -170,7 +173,17 @@ public class CloneDetailsActivity extends Screen {
         info.addView(Ui.row(this, "Network", netName));
         info.addView(Ui.row(this, "Created", new SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault()).format(new Date(p.createdAt))));
         info.addView(Ui.row(this, "Metadata size", "about " + approxBytes(p) + " bytes (this app's database)"));
-        info.addView(Ui.row(this, "App's own data", "Not accessible (Android sandbox)"));
+        if (virt && active) {
+            final android.widget.TextView sz = (android.widget.TextView) Ui.text(this, "Calculating...", 13, Ui.TEXT2, false);
+            info.addView(Ui.row(this, "Clone data size", "see below"));
+            info.addView(sz);
+            exec.execute(new Runnable() {
+                public void run() {
+                    final String s = CloneBackup.human(CloneBackup.sizeOf(p));
+                    ui(new Runnable() { public void run() { sz.setText("Clone data size: " + s); } });
+                }
+            });
+        } else info.addView(Ui.row(this, "App's own data", "Not accessible (Android sandbox)"));
         Ui.add(body, info);
 
         Ui.add(body, Ui.section(this, "Profile note"));

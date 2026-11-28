@@ -23,8 +23,11 @@ public class BackupActivity extends Screen {
         LinearLayout c = Ui.card(this);
         c.addView(Ui.text(this, "1. Profile backup: clone profile records (supported)", 13, Ui.TEXT, false));
         c.addView(Ui.text(this, "2. Configuration backup: network profile metadata and IP-check settings (supported). Passwords and credentials are never included.", 13, Ui.TEXT, false));
-        c.addView(Ui.text(this, "3. Application-data backup: NOT supported. Other apps' private data is protected by Android and this app cannot access it.", 13, Ui.ORANGE, false));
+        c.addView(Ui.text(this, "3. Virtual clone data backup (logins, files): supported for virtual clones only. Data of apps installed in Android itself is protected by Android and cannot be backed up.", 13, Ui.TEXT, false));
         Ui.add(body, c);
+        Ui.add(body, Ui.button(this, "Virtual clone data backups", true, new View.OnClickListener() {
+            public void onClick(View v) { startActivity(new Intent(BackupActivity.this, CloneBackupsActivity.class)); }
+        }));
 
         if (Build.VERSION.SDK_INT < 19) {
             Ui.add(body, Ui.text(this, "Backup files need Android 4.4 or newer (system file picker).", 13, Ui.RED, false));

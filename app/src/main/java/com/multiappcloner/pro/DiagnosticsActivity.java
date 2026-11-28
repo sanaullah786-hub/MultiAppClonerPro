@@ -55,6 +55,17 @@ public class DiagnosticsActivity extends Screen {
         Ui.add(body, Ui.button(this, "Copy diagnostics report", true, new View.OnClickListener() {
             public void onClick(View v) { Diag.markCrashSeen(DiagnosticsActivity.this); Diag.copyReport(DiagnosticsActivity.this); }
         }));
+        Ui.add(body, Ui.button(this, "Clone limit: " + CloneBackup.cloneLimit(this) + " running at once (change)", false, new View.OnClickListener() {
+            public void onClick(View v) {
+                Sheet.input(DiagnosticsActivity.this, "Clone processes at once (1-12)", String.valueOf(CloneBackup.cloneLimit(DiagnosticsActivity.this)), "Save", new Sheet.TextResult() {
+                    public void onText(String t) {
+                        try { CloneBackup.setCloneLimit(DiagnosticsActivity.this, Integer.parseInt(t.trim())); rebuild(); }
+                        catch (NumberFormatException e) { Toast.makeText(DiagnosticsActivity.this, "Enter a number.", Toast.LENGTH_SHORT).show(); }
+                    }
+                });
+            }
+        }));
+        Ui.add(body, Ui.text(this, "Default comes from this phone's RAM (" + CloneBackup.totalRamMb(this) + " MB). It is an estimate, not a measured value.", 12, Ui.TEXT2, false));
         Ui.add(body, Ui.button(this, "Clear diagnostics history", false, new View.OnClickListener() {
             public void onClick(View v) {
                 Diag.clear(DiagnosticsActivity.this);

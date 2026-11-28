@@ -45,6 +45,8 @@
 
         <activity android:name=".ImportApkActivity" android:screenOrientation="portrait" />
         <activity android:name=".StorageActivity" android:screenOrientation="portrait" />
+        <activity android:name=".CloneBackupsActivity" android:screenOrientation="portrait" />
+        <activity android:name=".CompatibilityActivity" android:screenOrientation="portrait" />
 
         <receiver android:name=".InstallResultReceiver" android:exported="false" />
     </application>
