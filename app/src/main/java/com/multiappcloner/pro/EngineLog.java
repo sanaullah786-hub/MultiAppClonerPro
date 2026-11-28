@@ -51,8 +51,8 @@ public final class EngineLog {
     /** Explains a failed launch and offers the log. */
     public static void launchFailed(final Activity a, String name) {
         Sheet.actions(a, null, "Could not open " + name, "The clone did not start")
-            .item("📋", "Copy engine log", "Paste it to support to find the cause", Ui.CYAN, new Runnable() {
-                public void run() { copy(a); }
+            .item("📋", "Copy diagnostics report", "Paste it to support to find the cause", Ui.CYAN, new Runnable() {
+                public void run() { Diag.copyReport(a); }
             })
             .item("🔄", "Try again later", "Close other apps to free memory, then retry", Ui.ORANGE, null)
             .show();

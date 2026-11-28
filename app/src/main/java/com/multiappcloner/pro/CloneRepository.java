@@ -22,8 +22,10 @@ public class CloneRepository {
     public static final int MAX_NAME = 30;
 
     private final DatabaseHelper helper;
+    private final Context ctx;
 
     public CloneRepository(Context c) {
+        ctx = c.getApplicationContext();
         helper = DatabaseHelper.get(c);
     }
 
@@ -171,16 +173,20 @@ public class CloneRepository {
 
     /** Next unused virtual user id: every virtual clone gets its own separate data area. */
     public int nextVirtualUser() {
+        int dbMax = -1;
         try {
             Cursor c = helper.getReadableDatabase().rawQuery("SELECT MAX(virtual_user) FROM " + DatabaseHelper.T_CLONES, null);
             try {
-                int max = c.moveToFirst() && !c.isNull(0) ? c.getInt(0) : -1;
-                return max + 1;
+                if (c.moveToFirst() && !c.isNull(0)) dbMax = c.getInt(0);
             } finally {
                 c.close();
             }
-        } catch (Exception e) {
-            return (int) (System.currentTimeMillis() % 100000);
+        } catch (Exception ignored) { }
+        android.content.SharedPreferences sp = ctx.getSharedPreferences("clone_users", android.content.Context.MODE_PRIVATE);
+        synchronized (CloneRepository.class) {
+            int id = com.multiappcloner.pro.diag.UserIds.next(dbMax, sp.getInt("highest", -1));
+            sp.edit().putInt("highest", id).commit();
+            return id;
         }
     }
 

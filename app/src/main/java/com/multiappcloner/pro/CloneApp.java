@@ -32,8 +32,23 @@ public class CloneApp extends Application {
     }
 
     @Override
+    public void onTrimMemory(int level) {
+        super.onTrimMemory(level);
+        if (level >= TRIM_MEMORY_RUNNING_CRITICAL && level < TRIM_MEMORY_UI_HIDDEN) {
+            Diag.event(Diag.MEMORY, "trim level " + level + " in " + Diag.processName());
+        }
+    }
+
+    @Override
+    public void onLowMemory() {
+        super.onLowMemory();
+        Diag.event(Diag.MEMORY, "onLowMemory in " + Diag.processName());
+    }
+
+    @Override
     public void onCreate() {
         super.onCreate();
+        Diag.init(this);
         try {
             BlackBoxCore.get().doCreate();
         } catch (Throwable t) {

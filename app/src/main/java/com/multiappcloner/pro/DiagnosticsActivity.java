@@ -44,7 +44,25 @@ public class DiagnosticsActivity extends Screen {
         if (visibleApps == 0) {
             Ui.add(body, Ui.text(this, "No apps are visible. Android package-visibility rules may be limiting this app. On Android 11+ with a higher target SDK, the QUERY_ALL_PACKAGES permission is needed.", 12, Ui.ORANGE, false));
         }
-        Ui.add(body, Ui.button(this, "Copy engine log (for support)", false, new View.OnClickListener() {
+        LinearLayout d = Ui.card(this);
+        d.addView(Ui.row(this, "Memory", Diag.memoryLine()));
+        d.addView(Ui.row(this, "Device CPU", java.util.Arrays.toString(Build.SUPPORTED_ABIS)));
+        if (Build.VERSION.SDK_INT >= 30)
+            d.addView(Ui.row(this, "All files access", android.os.Environment.isExternalStorageManager() ? "Allowed" : "Not allowed (games/browsers may fail)"));
+        d.addView(Ui.row(this, "Last crash", Diag.hasUnseenCrash(this) ? "Recorded (not yet reviewed)" : "None new"));
+        Ui.add(body, d);
+        Ui.add(body, Ui.text(this, "Reports remove emails, phone numbers, passwords and tokens. Nothing is uploaded; you copy the report and paste it yourself.", 12, Ui.ORANGE, false));
+        Ui.add(body, Ui.button(this, "Copy diagnostics report", true, new View.OnClickListener() {
+            public void onClick(View v) { Diag.markCrashSeen(DiagnosticsActivity.this); Diag.copyReport(DiagnosticsActivity.this); }
+        }));
+        Ui.add(body, Ui.button(this, "Clear diagnostics history", false, new View.OnClickListener() {
+            public void onClick(View v) {
+                Diag.clear(DiagnosticsActivity.this);
+                Toast.makeText(DiagnosticsActivity.this, "Diagnostics history cleared.", Toast.LENGTH_SHORT).show();
+                rebuild();
+            }
+        }));
+        Ui.add(body, Ui.button(this, "Copy raw engine log", false, new View.OnClickListener() {
             public void onClick(View v) { EngineLog.copy(DiagnosticsActivity.this); }
         }));
         Ui.add(body, Ui.button(this, "Stop all running clones", false, new View.OnClickListener() {

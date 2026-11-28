@@ -36,6 +36,7 @@ public class InstallResultReceiver extends BroadcastReceiver {
         } else {
             repo.setState(id, CloneRepository.STATUS_FAILED, CloneRepository.METHOD_REAL, pkg);
             log.add(id, "Install failed: " + describe(status, msg));
+            Diag.event(Diag.INSTALL, "PackageInstaller status " + status + " for " + pkg + ": " + describe(status, msg));
         }
     }
 
@@ -49,7 +50,8 @@ public class InstallResultReceiver extends BroadcastReceiver {
             case PackageInstaller.STATUS_FAILURE_INCOMPATIBLE: return "not compatible with this device" + m;
             case PackageInstaller.STATUS_FAILURE_INVALID: return "the rewritten APK was rejected as invalid" + m;
             case PackageInstaller.STATUS_FAILURE_STORAGE: return "not enough storage" + m;
-            default: return "unknown error" + m;
+            case 8: return "the installer timed out" + m;
+            default: return "unknown error (PackageInstaller status " + status + ")" + m;
         }
     }
 }

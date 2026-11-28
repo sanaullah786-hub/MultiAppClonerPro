@@ -31,7 +31,7 @@ public final class VirtualEngine {
         try {
             if (pkg.equals(c.getPackageName())) return new ApkCloningEngine.Result(false, "This app cannot clone itself.");
             BlackBoxCore core = BlackBoxCore.get();
-            try { core.createUser(userId); } catch (Throwable t) { Log.w(TAG, "createUser: " + t); }
+            prepareUser(core, pkg, userId);
             android.content.pm.ApplicationInfo ai = null;
             try { ai = c.getPackageManager().getApplicationInfo(pkg, android.content.pm.PackageManager.GET_META_DATA); } catch (Throwable ignored) { }
             java.io.File mergedApk = null;
@@ -44,6 +44,14 @@ public final class VirtualEngine {
                 work.mkdirs();
                 mergedApk = SplitMerger.merge(parts, work, pkg);
             }
+            java.util.List<java.io.File> parts2 = new java.util.ArrayList<java.io.File>();
+            if (mergedApk != null) parts2.add(mergedApk);
+            else if (ai != null) {
+                parts2.add(new java.io.File(ai.sourceDir));
+                if (ai.splitSourceDirs != null) for (String s : ai.splitSourceDirs) parts2.add(new java.io.File(s));
+            }
+            String notes = compatNotes(pkg, parts2, ai != null && ai.sharedLibraryFiles != null && ai.sharedLibraryFiles.length > 0,
+                ai != null && ai.splitSourceDirs != null && ai.splitSourceDirs.length > 0 && mergedApk == null);
             if (mergedApk != null) {
                 r = core.installPackageAsUser(mergedApk, userId);
                 mergedApk.delete();
@@ -51,7 +59,7 @@ public final class VirtualEngine {
                 r = core.installPackageAsUser(pkg, userId);
             }
             if (r != null && r.success) {
-                String extra = "";
+                String extra = notes;
                 if (ai != null) {
                     if (mergedApk == null) copySplitLibs(ai, pkg);
                     if (usesGoogleServices(ai) && isGmsSupported() && !isGmsInstalled(userId)) {
@@ -59,11 +67,15 @@ public final class VirtualEngine {
                         extra = g.success ? " Google services were added for sign-in." : " Google services could not be added: " + g.message;
                     }
                 }
+                Diag.event(Diag.INSTALL, "virtual install ok: " + pkg + " user " + userId + (mergedApk != null ? " (splits merged)" : ""));
                 return new ApkCloningEngine.Result(true, "Virtual clone ready." + extra);
             }
-            return new ApkCloningEngine.Result(false, "Virtual install failed: " + (r == null ? "no result" : r.msg));
+            String why = "Virtual install failed: " + (r == null ? "the engine returned no result" : r.msg);
+            Diag.event(Diag.INSTALL, why + " [" + pkg + " user " + userId + "]" + (notes.length() > 0 ? " notes:" + notes : ""));
+            return new ApkCloningEngine.Result(false, why + notes);
         } catch (Throwable t) {
             Log.e(TAG, "install", t);
+            Diag.event(Diag.INSTALL, "virtual install exception for " + pkg + ": " + t);
             return new ApkCloningEngine.Result(false, "Virtual install failed: " + t.getClass().getSimpleName()
                 + (t.getMessage() == null ? "" : ": " + t.getMessage()));
         }
@@ -73,15 +85,87 @@ public final class VirtualEngine {
     public static ApkCloningEngine.Result installApk(Context c, java.io.File apk, int userId) {
         try {
             BlackBoxCore core = BlackBoxCore.get();
-            try { core.createUser(userId); } catch (Throwable t) { Log.w(TAG, "createUser: " + t); }
-            InstallResult r = core.installPackageAsUser(apk, userId);
-            if (r != null && r.success) return new ApkCloningEngine.Result(true, "Installed in the virtual space.");
-            return new ApkCloningEngine.Result(false, "Virtual install failed: " + (r == null ? "no result" : r.msg));
+            InstallResult r = null;
+            String pkgName = packageOf(c, apk);
+            prepareUser(core, pkgName, userId);
+            String notes = compatNotes(pkgName, java.util.Collections.singletonList(apk), false, false);
+            r = core.installPackageAsUser(apk, userId);
+            if (r != null && r.success) {
+                Diag.event(Diag.INSTALL, "virtual apk install ok: " + pkgName + " user " + userId);
+                return new ApkCloningEngine.Result(true, "Installed in the virtual space." + notes);
+            }
+            String why = "Virtual install failed: " + (r == null ? "the engine returned no result" : r.msg);
+            Diag.event(Diag.INSTALL, why + " [" + pkgName + " user " + userId + "]" + (notes.length() > 0 ? " notes:" + notes : ""));
+            return new ApkCloningEngine.Result(false, why + notes);
         } catch (Throwable t) {
             Log.e(TAG, "installApk", t);
+            Diag.event(Diag.INSTALL, "virtual apk install exception: " + t);
             return new ApkCloningEngine.Result(false, "Virtual install failed: " + t.getClass().getSimpleName()
                 + (t.getMessage() == null ? "" : ": " + t.getMessage()));
         }
+    }
+
+    private static String packageOf(Context c, java.io.File apk) {
+        try {
+            android.content.pm.PackageInfo pi = c.getPackageManager().getPackageArchiveInfo(apk.getAbsolutePath(), 0);
+            return pi == null ? null : pi.packageName;
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    /**
+     * Makes sure the virtual user exists and holds no data left over from an earlier clone that used the same id.
+     * User ids are never reused (see CloneRepository.nextVirtualUser), so a new clone always starts empty.
+     */
+    private static void prepareUser(BlackBoxCore core, String pkg, int userId) {
+        try { core.createUser(userId); } catch (Throwable t) { Log.w(TAG, "createUser: " + t); }
+        if (pkg != null && !isInstalled(pkg, userId)) wipeData(pkg, userId);
+    }
+
+    /** Deletes this clone's private and shared-storage data folders. Only this package and this user id are touched. */
+    public static void wipeData(String pkg, int userId) {
+        if (pkg == null || pkg.length() == 0 || userId < 0 || pkg.contains("/") || pkg.contains("..")) return;
+        try {
+            deleteTree(top.niunaijun.blackbox.core.env.BEnvironment.getDataDir(pkg, userId));
+            deleteTree(top.niunaijun.blackbox.core.env.BEnvironment.getDeDataDir(pkg, userId));
+            deleteTree(top.niunaijun.blackbox.core.env.BEnvironment.getExternalDataDir(pkg, userId));
+        } catch (Throwable t) {
+            Diag.event(Diag.STORAGE, "wipe failed for " + pkg + " user " + userId + ": " + t);
+        }
+    }
+
+    private static void deleteTree(java.io.File f) {
+        if (f == null || !f.exists()) return;
+        java.io.File[] kids = f.listFiles();
+        if (kids != null) for (java.io.File k : kids) deleteTree(k);
+        f.delete();
+    }
+
+    /** Plain-language warnings found before installing. Also written to the diagnostics log. */
+    private static String compatNotes(String pkg, java.util.List<java.io.File> apks, boolean hasSharedLibs, boolean splitsNotMerged) {
+        StringBuilder sb = new StringBuilder();
+        try {
+            boolean staticLib = hasSharedLibs;
+            java.util.Set<String> abis = new java.util.LinkedHashSet<String>();
+            for (java.io.File f : apks) {
+                if (f == null || !f.exists()) continue;
+                if (com.multiappcloner.pro.diag.AbiScan.usesStaticLibrary(f)) staticLib = true;
+                abis.addAll(com.multiappcloner.pro.diag.AbiScan.abis(f));
+            }
+            if (staticLib) sb.append(" Note: this app loads code from a separate library package (like Chrome's Trichrome), which the virtual space cannot provide, so it may not start.");
+            if (!splitsNotMerged) {
+                String abi = com.multiappcloner.pro.diag.AbiScan.incompatibility(abis, android.os.Build.SUPPORTED_ABIS);
+                if (abi != null) sb.append(" Note: ").append(abi);
+            } else {
+                sb.append(" Note: its split APKs could not be merged, so parts of the app (language, graphics, native code) may be missing.");
+            }
+        } catch (Throwable t) {
+            Log.w(TAG, "compat check: " + t);
+        }
+        String n = sb.toString();
+        if (n.length() > 0) Diag.event(Diag.COMPAT, (pkg == null ? "?" : pkg) + n);
+        return n;
     }
 
     /** Native libraries of split APKs (modern apps ship them separately) must sit next to the base APK. */
@@ -131,9 +215,12 @@ public final class VirtualEngine {
 
     public static boolean launch(String pkg, int userId) {
         try {
-            return BlackBoxCore.get().launchApk(pkg, userId);
+            boolean ok = BlackBoxCore.get().launchApk(pkg, userId);
+            Diag.event(Diag.LAUNCH, (ok ? "launch requested " : "launch refused by the engine (no launch intent) ") + pkg + " user " + userId + " " + Diag.memoryLine());
+            return ok;
         } catch (Throwable t) {
             Log.e(TAG, "launch", t);
+            Diag.event(Diag.LAUNCH, "launch exception for " + pkg + " user " + userId + ": " + t);
             return false;
         }
     }
@@ -152,6 +239,7 @@ public final class VirtualEngine {
         try {
             BlackBoxCore.get().stopPackage(pkg, userId);
             BlackBoxCore.get().uninstallPackageAsUser(pkg, userId);
+            wipeData(pkg, userId);
             return true;
         } catch (Throwable t) {
             Log.e(TAG, "remove", t);

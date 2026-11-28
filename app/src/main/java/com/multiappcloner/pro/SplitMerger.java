@@ -43,6 +43,7 @@ public final class SplitMerger {
             return out;
         } catch (Throwable t) {
             Log.w(TAG, "merge failed: " + t, t);
+            Diag.event(Diag.INSTALL, "split merge failed for " + outName + " (" + apks.size() + " files): " + t);
             out.delete();
             return null;
         } finally {

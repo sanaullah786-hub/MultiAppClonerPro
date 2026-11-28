@@ -140,6 +140,18 @@ public class MainActivity extends Activity {
         statTotal.setText(String.valueOf(repo.count()));
         statActive.setText(String.valueOf(repo.countActive()));
         statNet.setText(String.valueOf(new NetworkRepository(this).count()));
+        if (Diag.hasUnseenCrash(this)) {
+            Diag.markCrashSeen(this);
+            Sheet.actions(this, null, "The app closed unexpectedly last time", "A crash was recorded")
+                .item("📋", "Copy diagnostics report", "Paste it to support to find the cause", Ui.CYAN, new Runnable() {
+                    public void run() { Diag.copyReport(MainActivity.this); }
+                })
+                .item("⏹", "Stop all running clones", "Frees memory before you try again", Ui.GREEN, new Runnable() {
+                    public void run() { CloneState.stopAll(MainActivity.this); }
+                })
+                .item("✖", "Dismiss", "", Ui.ORANGE, null)
+                .show();
+        }
     }
 
     @Override
