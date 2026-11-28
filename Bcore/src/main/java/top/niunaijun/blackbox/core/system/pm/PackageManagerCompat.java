@@ -361,6 +361,24 @@ public class PackageManagerCompat {
 
 
 
+        // Extra library packages the app was installed with (e.g. Chrome's Trichrome library). The host app writes
+        // their paths when it installs the app; they are added to the app's class path and resources like on Android.
+        try {
+            java.io.File list = new java.io.File(top.niunaijun.blackbox.BlackBoxCore.getContext().getFilesDir(),
+                "guest_shared_libs/" + info.packageName);
+            if (list.isFile()) {
+                java.io.BufferedReader r = new java.io.BufferedReader(new java.io.FileReader(list));
+                try {
+                    String l;
+                    while ((l = r.readLine()) != null) {
+                        l = l.trim();
+                        if (l.length() > 0 && new java.io.File(l).canRead()) sharedLibraryFileList.add(l);
+                    }
+                } finally {
+                    r.close();
+                }
+            }
+        } catch (Throwable ignored) { }
         info.sharedLibraryFiles = sharedLibraryFileList.toArray(new String[]{});
     }
 

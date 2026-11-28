@@ -52,6 +52,7 @@ public final class VirtualEngine {
             }
             String notes = compatNotes(pkg, parts2, ai != null && ai.sharedLibraryFiles != null && ai.sharedLibraryFiles.length > 0,
                 ai != null && ai.splitSourceDirs != null && ai.splitSourceDirs.length > 0 && mergedApk == null);
+            recordSharedLibraries(pkg, ai);
             if (mergedApk != null) {
                 r = core.installPackageAsUser(mergedApk, userId);
                 mergedApk.delete();
@@ -166,6 +167,39 @@ public final class VirtualEngine {
         String n = sb.toString();
         if (n.length() > 0) Diag.event(Diag.COMPAT, (pkg == null ? "?" : pkg) + n);
         return n;
+    }
+
+    /**
+     * Apps such as Chrome load code, resources and native libraries from a separate library package (Trichrome).
+     * Its path is saved for the engine, and its native libraries are copied next to the app's own.
+     * EXPERIMENTAL: not verified on a device.
+     */
+    private static void recordSharedLibraries(String pkg, android.content.pm.ApplicationInfo ai) {
+        try {
+            java.io.File dir = new java.io.File(BlackBoxCore.getContext().getFilesDir(), "guest_shared_libs");
+            java.io.File list = new java.io.File(dir, pkg);
+            list.delete();
+            if (ai == null || ai.sharedLibraryFiles == null) return;
+            StringBuilder sb = new StringBuilder();
+            for (String s : ai.sharedLibraryFiles) {
+                if (s == null || !s.startsWith("/data/app/") || !s.endsWith(".apk")) continue; // system jars are already handled
+                sb.append(s).append('\n');
+                try {
+                    top.niunaijun.blackbox.utils.NativeUtils.copyNativeLib(new java.io.File(s),
+                        top.niunaijun.blackbox.core.env.BEnvironment.getAppLibDir(pkg));
+                } catch (Throwable t) {
+                    Diag.event(Diag.COMPAT, "shared library native code not copied for " + pkg + ": " + t);
+                }
+            }
+            if (sb.length() > 0) {
+                dir.mkdirs();
+                java.io.FileWriter w = new java.io.FileWriter(list);
+                try { w.write(sb.toString()); } finally { w.close(); }
+                Diag.event(Diag.COMPAT, "shared libraries linked for " + pkg + ": " + sb.toString().trim().replace('\n', ' '));
+            }
+        } catch (Throwable t) {
+            Diag.event(Diag.COMPAT, "shared library setup failed for " + pkg + ": " + t);
+        }
     }
 
     /** Native libraries of split APKs (modern apps ship them separately) must sit next to the base APK. */
