@@ -27,3 +27,13 @@ split-APK merge result, low-memory sheet, stop-all, SD-card storage, crash promp
 - Memory-leak hunt, activity/service-launch rewrites and deeper Android 14 engine changes: not started, because
   without device logs there is no reproducible fault to fix. The new report will show them.
 - Process cap for concurrent clones.
+
+## Round 3 (2026-11-28)
+Added: clone data backup/restore (zip + SHA-256 manifest, verify, safe restore with rollback, zip-slip and symlink
+protection), clone data size, RAM-based clone-process limit (changeable, enforced when opening a clone), evidence-based
+Compatibility Center, experimental Trichrome library link for Chrome (untested).
+Verified by JVM test: backup create/verify/restore, damage and tamper detection, path traversal, rollback safety,
+limit values, "no verdict without evidence" rule. Verified by CI: build passes.
+Not verified on a phone: all UI screens above, Chrome, TikTok and every other app.
+Not done: clone duplicate, clone icon customisation, notification management, light/dark theme switch, full UI redesign,
+Android lint run, process suspension. Multiple Accounts APK was not provided to the developer tool and was not analysed.
